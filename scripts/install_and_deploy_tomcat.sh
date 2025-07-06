@@ -4,23 +4,17 @@ set -x
 
 echo "======== Installing AWS CodeDeploy Agent ========="
 sudo yum update -y
+sudo yum install ruby -y
+sudo yum install wget -y
+cd /home/ec2-user
+wget https://aws-codedeploy-ap-northeast-3.s3.ap-south-1.amazonaws.com/latest/install
+chmod +x ./install
+sudo ./install auto
+sudo service codedeploy-agent start
 
-# Detect Amazon Linux 2 or Amazon Linux
-if grep -q "Amazon Linux release 2" /etc/os-release; then
-  echo "Installing CodeDeploy agent for Amazon Linux 2..."
-  sudo yum install -y ruby wget
-  cd /home/ec2-user
-  wget https://https://aws-codedeploy-ap-northeast-3.s3.amazonaws.com/latest/install/latest/install
-  chmod +x ./install
-  sudo ./install auto
-else
-  echo "Installing CodeDeploy agent for Amazon Linux (classic)..."
-  sudo yum install -y ruby
-  cd /home/ec2-user
-  wget https://https://aws-codedeploy-ap-northeast-3.s3.amazonaws.com/latest/install/latest/install
-  chmod +x ./install
-  sudo ./install auto
-fi
+
+
+
 
 sudo systemctl start codedeploy-agent
 sudo systemctl enable codedeploy-agent
