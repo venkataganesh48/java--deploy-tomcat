@@ -3,10 +3,10 @@ os: linux
 
 files:
   - source: target/Ecomm.war
-    destination: /root
+    destination: /home/ec2-user
 
 hooks:
   AfterInstall:
     - location: scripts/install_and_deploy_tomcat.sh
       timeout: 300
-      runas: 
+      runas: root
