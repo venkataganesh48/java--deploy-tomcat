@@ -17,7 +17,7 @@ else
   echo "Installing CodeDeploy agent for Amazon Linux (classic)..."
   sudo yum install -y ruby
   cd /home/ec2-user
-  wget https://bucket-name.region-code.amazonaws.com/latest/install
+  wget https://https://aws-codedeploy-ap-northeast-3.s3.amazonaws.com/latest/install/latest/install
   chmod +x ./install
   sudo ./install auto
 fi
