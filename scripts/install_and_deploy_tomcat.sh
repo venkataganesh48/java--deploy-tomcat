@@ -10,7 +10,7 @@ if grep -q "Amazon Linux release 2" /etc/os-release; then
   echo "Installing CodeDeploy agent for Amazon Linux 2..."
   sudo yum install -y ruby wget
   cd /home/ec2-user
-  wget https://bucket-name.region-code.amazonaws.com/latest/install
+  wget https://chandu-gani.ap-northeast-3.amazonaws.com/latest/install
   chmod +x ./install
   sudo ./install auto
 else
