@@ -88,7 +88,7 @@ SOURCE_WAR="/home/ec2-user/${WAR_NAME}"
 TARGET_WAR="/opt/tomcat/webapps/${WAR_NAME}"
 APP_DIR="/opt/tomcat/webapps/Ecomm"
 
-Clean up previous deployment
+# Clean up previous deployment
 sudo rm -rf "$APP_DIR"
 sudo rm -f "$TARGET_WAR"
 
