@@ -1,17 +1,16 @@
 #!/bin/bash
-
-echo "======== Updating system ========="
-sudo yum update -y
+set -e
+set -x
 
 echo "======== Installing Java 11 ========="
-sudo amazon-linux-extras enable corretto11
 sudo yum install -y java-11-amazon-corretto
 
 echo "======== Installing Tomcat ========="
+TOMCAT_VERSION=9.0.86
 cd /opt/
-sudo wget https://downloads.apache.org/tomcat/tomcat-9/v9.0.85/bin/apache-tomcat-9.0.85.tar.gz
-sudo tar -xzf apache-tomcat-9.0.85.tar.gz
-sudo mv apache-tomcat-9.0.85 tomcat
+sudo curl -O https://archive.apache.org/dist/tomcat/tomcat-9/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz
+sudo tar -xzf apache-tomcat-$TOMCAT_VERSION.tar.gz
+sudo mv apache-tomcat-$TOMCAT_VERSION tomcat
 sudo chmod +x /opt/tomcat/bin/*.sh
 
 echo "======== Creating Tomcat systemd service ========="
