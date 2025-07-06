@@ -2,6 +2,30 @@
 set -e
 set -x
 
+echo "======== Installing AWS CodeDeploy Agent ========="
+sudo yum update -y
+
+# Detect Amazon Linux 2 or Amazon Linux
+if grep -q "Amazon Linux release 2" /etc/os-release; then
+  echo "Installing CodeDeploy agent for Amazon Linux 2..."
+  sudo yum install -y ruby wget
+  cd /home/ec2-user
+  wget https://bucket-name.region-code.amazonaws.com/latest/install
+  chmod +x ./install
+  sudo ./install auto
+else
+  echo "Installing CodeDeploy agent for Amazon Linux (classic)..."
+  sudo yum install -y ruby
+  cd /home/ec2-user
+  wget https://bucket-name.region-code.amazonaws.com/latest/install
+  chmod +x ./install
+  sudo ./install auto
+fi
+
+sudo systemctl start codedeploy-agent
+sudo systemctl enable codedeploy-agent
+sudo systemctl status codedeploy-agent
+
 echo "======== Checking and Installing Java 11 ========="
 if ! java -version &>/dev/null; then
   echo "Installing Java 11..."
