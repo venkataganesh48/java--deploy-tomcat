@@ -25,6 +25,17 @@ else
   echo "Tomcat is already installed. Skipping installation."
 fi
 
+echo "======== Creating tomcat-users.xml with admin user ========="
+sudo tee /opt/tomcat/conf/tomcat-users.xml > /dev/null <<EOF
+<tomcat-users>
+  <role rolename="manager-gui"/>
+  <role rolename="manager-script"/>
+  <role rolename="manager-jmx"/>
+  <role rolename="manager-status"/>
+  <user username="admin" password="admin" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
+</tomcat-users>
+EOF
+
 echo "======== Creating Tomcat systemd service ========="
 if [ ! -f "/etc/systemd/system/tomcat.service" ]; then
   sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
