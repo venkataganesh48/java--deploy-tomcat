@@ -8,15 +8,21 @@ sudo yum install -y java-11-amazon-corretto
 echo "======== Installing Tomcat ========="
 TOMCAT_VERSION=9.0.86
 cd /opt/
-sudo curl -O https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
-sudo tar -xzf apache-tomcat-${TOMCAT_VERSION}.tar.gz
-sudo mv apache-tomcat-${TOMCAT_VERSION} tomcat
 
-# Set execute permission for scripts
-sudo chmod +x /opt/tomcat/bin/*.sh
+# Only install Tomcat if not already installed
+if [ ! -d "/opt/tomcat" ]; then
+  sudo curl -O https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
+  sudo tar -xzf apache-tomcat-${TOMCAT_VERSION}.tar.gz
+  sudo mv apache-tomcat-${TOMCAT_VERSION} tomcat
 
-# Give ec2-user ownership to allow systemd to run as this user
-sudo chown -R ec2-user:ec2-user /opt/tomcat
+  # Set execute permission for scripts
+  sudo chmod +x /opt/tomcat/bin/*.sh
+
+  # Give ec2-user ownership to allow systemd to run as this user
+  sudo chown -R ec2-user:ec2-user /opt/tomcat
+else
+  echo "Tomcat is already installed. Skipping reinstallation."
+fi
 
 echo "======== Creating Tomcat systemd service ========="
 sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
