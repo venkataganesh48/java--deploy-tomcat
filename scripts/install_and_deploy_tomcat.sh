@@ -39,26 +39,27 @@ else
   echo "Tomcat is already installed. Skipping installation."
 fi
 
-echo "======== Creating tomcat-users.xml with admin user ========="
+echo "======== Creating tomcat-users.xml with BASIC auth and admin users ========="
 sudo tee /opt/tomcat/conf/tomcat-users.xml > /dev/null <<EOF
-<tomcat-users>
+<?xml version='1.0' encoding='utf-8'?>
+<tomcat-users xmlns="http://tomcat.apache.org/xml"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
+              version="1.0">
+
+  <!-- Admin user for Tomcat Manager -->
   <role rolename="manager-gui"/>
   <role rolename="manager-script"/>
   <role rolename="manager-jmx"/>
   <role rolename="manager-status"/>
   <user username="admin" password="admin" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
+
+  <!-- App user for BASIC auth on Ecomm.war -->
+  <role rolename="user"/>
+  <user username="admin" password="admin" roles="user"/>
+
 </tomcat-users>
 EOF
-
-echo "======== Allowing remote access to Manager and Host Manager apps ========="
-MANAGER_CONTEXT="/opt/tomcat/webapps/manager/META-INF/context.xml"
-HOSTMANAGER_CONTEXT="/opt/tomcat/webapps/host-manager/META-INF/context.xml"
-
-for FILE in "$MANAGER_CONTEXT" "$HOSTMANAGER_CONTEXT"; do
-  if [ -f "$FILE" ]; then
-    sudo sed -i 's/<Valve className="org.apache.catalina.valves.RemoteAddrValve".*\/>/<Valve className="org.apache.catalina.valves.RemoteAddrValve" allow=".*" \/>/' "$FILE"
-  fi
-done
 
 echo "======== Creating Tomcat systemd service ========="
 if [ ! -f "/etc/systemd/system/tomcat.service" ]; then
@@ -94,10 +95,10 @@ echo "======== Stopping Tomcat to deploy WAR file ========="
 sudo systemctl stop tomcat || true
 
 echo "======== Deploying WAR file to Tomcat ========="
-WAR_NAME="ROOT.war"
+WAR_NAME="Ecomm.war"
 SOURCE_WAR="/home/ec2-user/${WAR_NAME}"
 TARGET_WAR="/opt/tomcat/webapps/${WAR_NAME}"
-APP_DIR="/opt/tomcat/webapps/ROOT"
+APP_DIR="/opt/tomcat/webapps/Ecomm"
 
 # Clean up previous deployment
 sudo rm -rf "$APP_DIR"
