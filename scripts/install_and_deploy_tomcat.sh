@@ -10,7 +10,6 @@ cd /home/ec2-user
 wget https://aws-codedeploy-ap-northeast-3.s3.amazonaws.com/latest/install
 chmod +x ./install
 sudo ./install auto
-
 sudo systemctl start codedeploy-agent
 sudo systemctl enable codedeploy-agent
 sudo systemctl status codedeploy-agent
