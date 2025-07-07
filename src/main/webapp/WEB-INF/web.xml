@@ -1,8 +1,19 @@
-<!-- src/main/webapp/WEB-INF/web.xml -->
 <web-app xmlns="http://java.sun.com/xml/ns/javaee"
          version="3.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://java.sun.com/xml/ns/javaee 
                              http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd">
+
   <display-name>My Ecomm App</display-name>
+
+  <servlet>
+    <servlet-name>HelloServlet</servlet-name>
+    <servlet-class>com.mycompany.HelloServlet</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>HelloServlet</servlet-name>
+    <url-pattern>/hello</url-pattern>
+  </servlet-mapping>
+
 </web-app>
