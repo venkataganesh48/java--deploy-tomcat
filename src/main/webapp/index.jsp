@@ -1,9 +1,8 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+
 <html>
-<head>
-    <title>Ecomm App</title>
-</head>
-<body>
-    <h1>✅ Welcome to Ecomm Java App deployed on Tomcat!</h1>
-</body>
+  <body>
+    <h2>Welcome to the Ecomm App</h2>
+    <p>Visit <a href="hello">Hello Servlet</a></p>
+  </body>
 </html>
+
