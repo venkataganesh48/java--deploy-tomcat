@@ -2,7 +2,7 @@ version: 0.0
 os: linux
 
 files:
-  - source: target/ROOT.war
+  - source: target/Ecomm.war
     destination: /home/ec2-user
 
 hooks:
