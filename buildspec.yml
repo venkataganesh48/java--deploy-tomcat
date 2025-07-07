@@ -21,7 +21,7 @@ phases:
   post_build:
   commands:
     - echo Build completed. Preparing artifacts...
-    - mv target/Ecomm.war target/ROOT.war
+    - mv target/Ecomm.war 
     - ls -l target/
 
 
