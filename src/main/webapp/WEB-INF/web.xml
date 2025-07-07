@@ -4,17 +4,7 @@
          xsi:schemaLocation="http://java.sun.com/xml/ns/javaee 
                              http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd">
 
-  <display-name>Ecomm App</display-name>
-
-  <servlet>
-    <servlet-name>hello</servlet-name>
-    <servlet-class>com.ecomm.HelloServlet</servlet-class>
-  </servlet>
-
-  <servlet-mapping>
-    <servlet-name>hello</servlet-name>
-    <url-pattern>/hello</url-pattern>
-  </servlet-mapping>
+  <display-name>My Ecomm App</display-name>
 
   <security-constraint>
     <web-resource-collection>
@@ -27,11 +17,8 @@
   </security-constraint>
 
   <login-config>
-    <auth-method>FORM</auth-method>
-    <form-login-config>
-      <form-login-page>/login.jsp</form-login-page>
-      <form-error-page>/login-error.jsp</form-error-page>
-    </form-login-config>
+    <auth-method>BASIC</auth-method>
+    <realm-name>User Login</realm-name>
   </login-config>
 
   <security-role>
