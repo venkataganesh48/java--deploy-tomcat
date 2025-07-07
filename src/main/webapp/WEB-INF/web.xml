@@ -5,21 +5,6 @@
                              http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd">
 
   <display-name>My Ecomm App</display-name>
-
-  <!-- Servlet Configuration (Optional if not using HelloServlet) -->
-  <!--
-  <servlet>
-    <servlet-name>hello</servlet-name>
-    <servlet-class>com.ecomm.HelloServlet</servlet-class>
-  </servlet>
-
-  <servlet-mapping>
-    <servlet-name>hello</servlet-name>
-    <url-pattern>/hello</url-pattern>
-  </servlet-mapping>
-  -->
-
-  <!-- Security Constraints -->
   <security-constraint>
     <web-resource-collection>
       <web-resource-name>Protected Area</web-resource-name>
