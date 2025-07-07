@@ -4,8 +4,9 @@
          xsi:schemaLocation="http://java.sun.com/xml/ns/javaee 
                              http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd">
 
-  <display-name>My Ecomm App</display-name>
+  <display-name>Ecomm App</display-name>
 
+  <!-- Security constraint to protect all URLs -->
   <security-constraint>
     <web-resource-collection>
       <web-resource-name>Protected Area</web-resource-name>
@@ -16,17 +17,15 @@
     </auth-constraint>
   </security-constraint>
 
+  <!-- Login configuration using BASIC auth -->
   <login-config>
     <auth-method>BASIC</auth-method>
     <realm-name>User Login</realm-name>
   </login-config>
 
+  <!-- Declaring the user role -->
   <security-role>
     <role-name>user</role-name>
   </security-role>
-
-  <welcome-file-list>
-    <welcome-file>index.jsp</welcome-file>
-  </welcome-file-list>
 
 </web-app>
