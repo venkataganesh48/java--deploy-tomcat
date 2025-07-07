@@ -83,7 +83,7 @@ echo "======== Stopping Tomcat to deploy WAR file ========="
 sudo systemctl stop tomcat || true
 
 echo "======== Deploying WAR file to Tomcat ========="
-WAR_NAME="ROOT.war"
+WAR_NAME="Ecomm.war"
 SOURCE_WAR="/home/ec2-user/${WAR_NAME}"
 TARGET_WAR="/opt/tomcat/webapps/${WAR_NAME}"
 APP_DIR="/opt/tomcat/webapps/Ecomm"
