@@ -50,6 +50,16 @@ sudo tee /opt/tomcat/conf/tomcat-users.xml > /dev/null <<EOF
 </tomcat-users>
 EOF
 
+echo "======== Allowing remote access to Manager and Host Manager apps ========="
+MANAGER_CONTEXT="/opt/tomcat/webapps/manager/META-INF/context.xml"
+HOSTMANAGER_CONTEXT="/opt/tomcat/webapps/host-manager/META-INF/context.xml"
+
+for FILE in "$MANAGER_CONTEXT" "$HOSTMANAGER_CONTEXT"; do
+  if [ -f "$FILE" ]; then
+    sudo sed -i 's/<Valve className="org.apache.catalina.valves.RemoteAddrValve".*\/>/<Valve className="org.apache.catalina.valves.RemoteAddrValve" allow=".*" \/>/' "$FILE"
+  fi
+done
+
 echo "======== Creating Tomcat systemd service ========="
 if [ ! -f "/etc/systemd/system/tomcat.service" ]; then
   sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
@@ -84,10 +94,10 @@ echo "======== Stopping Tomcat to deploy WAR file ========="
 sudo systemctl stop tomcat || true
 
 echo "======== Deploying WAR file to Tomcat ========="
-WAR_NAME="Ecomm.war"
+WAR_NAME="ROOT.war"
 SOURCE_WAR="/home/ec2-user/${WAR_NAME}"
 TARGET_WAR="/opt/tomcat/webapps/${WAR_NAME}"
-APP_DIR="/opt/tomcat/webapps/Ecomm"
+APP_DIR="/opt/tomcat/webapps/ROOT"
 
 # Clean up previous deployment
 sudo rm -rf "$APP_DIR"
