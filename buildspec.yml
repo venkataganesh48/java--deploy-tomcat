@@ -27,4 +27,4 @@ artifacts:
   files:
     - target/*.war
     - appspec.yml
-    - scripts/install_and_deploy_tomcat.sh 
+    - scripts/install_and_deploy_tomcat.sh
