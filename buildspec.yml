@@ -19,14 +19,12 @@ phases:
       - mvn clean package -DskipTests
 
   post_build:
-  commands:
-    - echo Build completed. Preparing artifacts...
-    - mv target/Ecomm.war 
-    - ls -l target/
-
+    commands:
+      - echo Build completed. Preparing artifacts...
+      - ls -l target/
 
 artifacts:
   files:
     - target/*.war
     - appspec.yml
-    - scripts/install_and_deploy_tomcat.sh
+    - scripts/install_and_deploy_tomcat.sh 
