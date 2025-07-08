@@ -43,4 +43,4 @@ artifacts:
     - target/*.war
     - appspec.yml
     - scripts/install_and_deploy_tomcat.sh
-  discard-paths: yes
+  
