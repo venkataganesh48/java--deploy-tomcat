@@ -52,12 +52,10 @@ sudo tee /opt/tomcat/conf/tomcat-users.xml > /dev/null <<EOF
   <role rolename="manager-script"/>
   <role rolename="manager-jmx"/>
   <role rolename="manager-status"/>
-  <user username="admin" password="admin" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
+  <user username="admin" password="admin" roles="manager-gui,manager-script,manager-jmx,manager-status,admin"/>
 
-  <!-- App user for BASIC auth on Ecomm.war -->
-  <role rolename="user"/>
-  <user username="admin" password="admin" roles="user"/>
-
+  <!-- Application-level role for BASIC auth (matches web.xml) -->
+  <role rolename="admin"/>
 </tomcat-users>
 EOF
 
