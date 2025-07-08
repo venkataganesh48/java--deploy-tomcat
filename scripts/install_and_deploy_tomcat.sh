@@ -13,14 +13,14 @@ sudo ./install auto
 
 sudo systemctl start codedeploy-agent
 sudo systemctl enable codedeploy-agent
-sudo systemctl status codedeploy-agent
+sudo systemctl status codedeploy-agent || true
 
 echo "======== Checking and Installing Java 11 ========="
 if ! java -version &>/dev/null; then
   echo "Installing Java 11..."
   sudo yum install -y java-11-amazon-corretto
 else
-  echo "Java is already installed."
+  echo "✅ Java is already installed."
 fi
 
 echo "======== Installing Tomcat ========="
@@ -36,8 +36,12 @@ if [ ! -d "/opt/tomcat" ]; then
   sudo chmod +x /opt/tomcat/bin/*.sh
   sudo chown -R ec2-user:ec2-user /opt/tomcat
 else
-  echo "Tomcat is already installed. Skipping installation."
+  echo "✅ Tomcat is already installed. Skipping installation."
 fi
+
+# Convert scripts to Unix format (in case of CRLF line endings)
+sudo yum install -y dos2unix || true
+sudo dos2unix /opt/tomcat/bin/*.sh || true
 
 echo "======== Creating tomcat-users.xml with BASIC auth and admin users ========="
 sudo tee /opt/tomcat/conf/tomcat-users.xml > /dev/null <<EOF
@@ -46,18 +50,13 @@ sudo tee /opt/tomcat/conf/tomcat-users.xml > /dev/null <<EOF
               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
               xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
               version="1.0">
-
-  <!-- Admin user for Tomcat Manager -->
   <role rolename="manager-gui"/>
   <role rolename="manager-script"/>
   <role rolename="manager-jmx"/>
   <role rolename="manager-status"/>
   <user username="admin" password="admin" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
-
-  <!-- App user for BASIC auth on Ecomm.war -->
   <role rolename="user"/>
   <user username="admin" password="admin" roles="user"/>
-
 </tomcat-users>
 EOF
 
@@ -117,4 +116,11 @@ sudo systemctl daemon-reload
 sudo systemctl enable tomcat
 sudo systemctl restart tomcat
 
-echo "======== Deployment Complete ========="
+if systemctl is-active --quiet tomcat; then
+  echo "✅ Tomcat is running successfully."
+else
+  echo "❌ Tomcat failed to start. Check with: sudo journalctl -xeu tomcat.service"
+  exit 1
+fi
+
+echo "======== ✅ Deployment Complete ========="
