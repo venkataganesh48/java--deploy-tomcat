@@ -9,20 +9,22 @@ echo "======== Installing Tomcat ========="
 TOMCAT_VERSION=9.0.86
 cd /opt/
 
+# Only install Tomcat if not already installed
 if [ ! -d "/opt/tomcat" ]; then
   sudo curl -O https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
   sudo tar -xzf apache-tomcat-${TOMCAT_VERSION}.tar.gz
   sudo mv apache-tomcat-${TOMCAT_VERSION} tomcat
 
-  # Set execute permission for Tomcat scripts
+  # Make Tomcat scripts executable
   sudo chmod +x /opt/tomcat/bin/*.sh
 
-  # Give ec2-user ownership
+  # Set ownership for ec2-user
   sudo chown -R ec2-user:ec2-user /opt/tomcat
 else
-  echo "Tomcat is already installed. Skipping reinstallation."
+  echo "✅ Tomcat already installed, skipping..."
 fi
 
+# === Create Tomcat systemd service ===
 echo "======== Creating Tomcat systemd service ========="
 sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
 [Unit]
@@ -49,29 +51,47 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
+# === Start and enable Tomcat ===
 echo "======== Starting and enabling Tomcat service ========="
 sudo systemctl daemon-reload
-sudo systemctl start tomcat
 sudo systemctl enable tomcat
 
+# Check if startup script exists before starting
+if [ -f /opt/tomcat/bin/startup.sh ]; then
+  sudo systemctl start tomcat
+else
+  echo "❌ Tomcat startup script not found! Aborting."
+  exit 1
+fi
+
+# === Deploy WAR file ===
 echo "======== Deploying WAR file to Tomcat ========="
 WAR_FILE="Ecomm.war"
 TARGET_WAR="/opt/tomcat/webapps/${WAR_FILE}"
 
-# Dynamically find WAR file location in CodeDeploy deployment directory
+# Find the actual WAR location from CodeDeploy staging dir
 SOURCE_WAR=$(find /opt/codedeploy-agent/deployment-root/ -name "${WAR_FILE}" | head -n 1)
 
 echo "Looking for WAR file at: $SOURCE_WAR"
 
 if [ -f "$SOURCE_WAR" ]; then
   sudo cp "$SOURCE_WAR" "$TARGET_WAR"
-  echo "✅ WAR file deployed to Tomcat."
+  echo "✅ WAR file copied to Tomcat webapps."
 else
-  echo "❌ WAR file not found. Expected at: $SOURCE_WAR"
+  echo "❌ WAR file not found in deployment directory!"
   exit 1
 fi
 
-echo "======== Restarting Tomcat to reload application ========="
+# === Restart Tomcat after deployment ===
+echo "======== Restarting Tomcat to reload new app ========="
 sudo systemctl restart tomcat
+
+# === Verify Tomcat is running ===
+if systemctl is-active --quiet tomcat; then
+  echo "✅ Tomcat is running successfully."
+else
+  echo "❌ Tomcat failed to start. Run: sudo journalctl -xeu tomcat.service"
+  exit 1
+fi
 
 echo "======== ✅ Deployment Complete ========="
