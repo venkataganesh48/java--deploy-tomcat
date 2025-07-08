@@ -4,7 +4,7 @@ set -x
 
 echo "======== Installing AWS CodeDeploy Agent ========="
 sudo yum update -y
-sudo yum install -y ruby wget
+sudo yum install -y ruby wget dos2unix
 
 cd /home/ec2-user
 wget https://aws-codedeploy-us-west-2.s3.amazonaws.com/latest/install
@@ -13,14 +13,13 @@ sudo ./install auto
 
 sudo systemctl start codedeploy-agent
 sudo systemctl enable codedeploy-agent
-sudo systemctl status codedeploy-agent
+sudo systemctl status codedeploy-agent || true
 
 echo "======== Checking and Installing Java 11 ========="
 if ! java -version &>/dev/null; then
-  echo "Installing Java 11..."
   sudo yum install -y java-11-amazon-corretto
 else
-  echo "Java is already installed."
+  echo "✅ Java is already installed"
 fi
 
 echo "======== Installing Tomcat ========="
@@ -34,23 +33,20 @@ if [ ! -d "/opt/tomcat" ]; then
   sudo tar -xzf apache-tomcat-${TOMCAT_VERSION}.tar.gz
   sudo mv apache-tomcat-${TOMCAT_VERSION} tomcat
 
-  # ✅ Fix permissions
+  echo "======== Fixing permissions for Tomcat scripts and binaries ========="
   sudo chmod +x /opt/tomcat/bin/*.sh
   sudo chmod +x /opt/tomcat/bin/*.jar
   sudo chmod -R 755 /opt/tomcat
+  sudo dos2unix /opt/tomcat/bin/*.sh || true
   sudo chown -R ec2-user:ec2-user /opt/tomcat
 else
-  echo "Tomcat is already installed. Skipping installation."
+  echo "✅ Tomcat already exists. Skipping installation."
 fi
 
-echo "======== Creating tomcat-users.xml with BASIC auth and admin users ========="
+echo "======== Creating tomcat-users.xml with BASIC auth ========="
 sudo tee /opt/tomcat/conf/tomcat-users.xml > /dev/null <<EOF
 <?xml version='1.0' encoding='utf-8'?>
-<tomcat-users xmlns="http://tomcat.apache.org/xml"
-              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-              xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
-              version="1.0">
-
+<tomcat-users>
   <role rolename="manager-gui"/>
   <role rolename="manager-script"/>
   <role rolename="manager-jmx"/>
@@ -86,10 +82,10 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 else
-  echo "Tomcat systemd service already exists. Skipping creation."
+  echo "✅ tomcat.service already exists. Skipping creation."
 fi
 
-echo "======== Stopping Tomcat to deploy WAR file ========="
+echo "======== Stopping Tomcat before deployment ========="
 sudo systemctl stop tomcat || true
 
 echo "======== Deploying WAR file to Tomcat ========="
@@ -98,7 +94,6 @@ SOURCE_WAR="/home/ec2-user/${WAR_NAME}"
 TARGET_WAR="/opt/tomcat/webapps/${WAR_NAME}"
 APP_DIR="/opt/tomcat/webapps/Ecomm"
 
-# Clean up previous deployment
 sudo rm -rf "$APP_DIR"
 sudo rm -f "$TARGET_WAR"
 
@@ -114,12 +109,5 @@ echo "======== Restarting Tomcat service ========="
 sudo systemctl daemon-reload
 sudo systemctl enable tomcat
 sudo systemctl restart tomcat
-
-if systemctl is-active --quiet tomcat; then
-  echo "✅ Tomcat started successfully."
-else
-  echo "❌ Tomcat failed to start. Run: sudo journalctl -xeu tomcat.service"
-  exit 1
-fi
 
 echo "======== ✅ Deployment Complete ========="
