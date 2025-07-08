@@ -1,15 +1,10 @@
 version: 0.0
 os: linux
-
 files:
   - source: target/Ecomm.war
     destination: /home/ec2-user/
-
-  - source: scripts/install_and_deploy_tomcat.sh
-    destination: /home/ec2-user/
-
 hooks:
   AfterInstall:
-    - location: install_and_deploy_tomcat.sh
-      timeout: 600
-      runas: ec2-user
+    - location: scripts/install_and_deploy_tomcat.sh
+      timeout: 300
+      runas: root
