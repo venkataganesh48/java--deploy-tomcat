@@ -2,32 +2,68 @@
 set -e
 set -x
 
-echo "======== Installing Java 11 ========="
-sudo yum install -y java-11-amazon-corretto
+echo "======== Installing AWS CodeDeploy Agent ========="
+sudo yum update -y
+sudo yum install -y ruby wget
+
+cd /home/ec2-user
+wget https://aws-codedeploy-ap-northeast-3.s3.amazonaws.com/latest/install
+chmod +x ./install
+sudo ./install auto
+
+sudo systemctl start codedeploy-agent
+sudo systemctl enable codedeploy-agent
+sudo systemctl status codedeploy-agent
+
+echo "======== Checking and Installing Java 11 ========="
+if ! java -version &>/dev/null; then
+  echo "Installing Java 11..."
+  sudo yum install -y java-11-amazon-corretto
+else
+  echo "Java is already installed."
+fi
 
 echo "======== Installing Tomcat ========="
 TOMCAT_VERSION=9.0.86
+sudo mkdir -p /opt
 cd /opt/
 
-# Clean reinstall if startup.sh doesn't exist
-if [ ! -f /opt/tomcat/bin/startup.sh ]; then
-  echo "⚠️ Tomcat binary missing or corrupted — reinstalling..."
-  sudo rm -rf /opt/tomcat
+if [ ! -d "/opt/tomcat" ]; then
+  echo "Downloading and installing Tomcat..."
   sudo curl -O https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
   sudo tar -xzf apache-tomcat-${TOMCAT_VERSION}.tar.gz
   sudo mv apache-tomcat-${TOMCAT_VERSION} tomcat
-
-  # Make Tomcat scripts executable
   sudo chmod +x /opt/tomcat/bin/*.sh
-
-  # Set ownership for ec2-user
   sudo chown -R ec2-user:ec2-user /opt/tomcat
 else
-  echo "✅ Tomcat already installed with startup.sh present."
+  echo "Tomcat is already installed. Skipping installation."
 fi
 
+echo "======== Creating tomcat-users.xml with BASIC auth and admin users ========="
+sudo tee /opt/tomcat/conf/tomcat-users.xml > /dev/null <<EOF
+<?xml version='1.0' encoding='utf-8'?>
+<tomcat-users xmlns="http://tomcat.apache.org/xml"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
+              version="1.0">
+
+  <!-- Admin user for Tomcat Manager -->
+  <role rolename="manager-gui"/>
+  <role rolename="manager-script"/>
+  <role rolename="manager-jmx"/>
+  <role rolename="manager-status"/>
+  <user username="admin" password="admin" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
+
+  <!-- App user for BASIC auth on Ecomm.war -->
+  <role rolename="user"/>
+  <user username="admin" password="admin" roles="user"/>
+
+</tomcat-users>
+EOF
+
 echo "======== Creating Tomcat systemd service ========="
-sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
+if [ ! -f "/etc/systemd/system/tomcat.service" ]; then
+  sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
 [Unit]
 Description=Apache Tomcat Web Application Container
 After=network.target
@@ -51,17 +87,22 @@ RestartSec=10
 [Install]
 WantedBy=multi-user.target
 EOF
+else
+  echo "Tomcat systemd service already exists. Skipping creation."
+fi
 
-echo "======== Starting and enabling Tomcat service ========="
-sudo systemctl daemon-reload
-sudo systemctl enable tomcat
-sudo systemctl restart tomcat
+echo "======== Stopping Tomcat to deploy WAR file ========="
+sudo systemctl stop tomcat || true
 
-# === Deploy WAR file ===
 echo "======== Deploying WAR file to Tomcat ========="
-WAR_FILE="Ecomm.war"
-SOURCE_WAR="/home/ec2-user/${WAR_FILE}"
-TARGET_WAR="/opt/tomcat/webapps/${WAR_FILE}"
+WAR_NAME="Ecomm.war"
+SOURCE_WAR="/home/ec2-user/${WAR_NAME}"
+TARGET_WAR="/opt/tomcat/webapps/${WAR_NAME}"
+APP_DIR="/opt/tomcat/webapps/Ecomm"
+
+# Clean up previous deployment
+sudo rm -rf "$APP_DIR"
+sudo rm -f "$TARGET_WAR"
 
 if [ -f "$SOURCE_WAR" ]; then
   sudo cp "$SOURCE_WAR" "$TARGET_WAR"
@@ -71,16 +112,9 @@ else
   exit 1
 fi
 
-# === Restart Tomcat after deployment ===
-echo "======== Restarting Tomcat to reload new app ========="
+echo "======== Starting and Enabling Tomcat service ========="
+sudo systemctl daemon-reload
+sudo systemctl enable tomcat
 sudo systemctl restart tomcat
 
-# === Verify Tomcat is running ===
-if systemctl is-active --quiet tomcat; then
-  echo "✅ Tomcat is running successfully."
-else
-  echo "❌ Tomcat failed to start. Run: sudo journalctl -xeu tomcat.service"
-  exit 1
-fi
-
-echo "======== ✅ Deployment Complete ========="
+echo "======== Deployment Complete ========="
