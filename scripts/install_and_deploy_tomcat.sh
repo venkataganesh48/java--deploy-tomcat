@@ -9,8 +9,10 @@ echo "======== Installing Tomcat ========="
 TOMCAT_VERSION=9.0.86
 cd /opt/
 
-# Only install Tomcat if not already installed
-if [ ! -d "/opt/tomcat" ]; then
+# Clean reinstall if startup.sh doesn't exist
+if [ ! -f /opt/tomcat/bin/startup.sh ]; then
+  echo "⚠️ Tomcat binary missing or corrupted — reinstalling..."
+  sudo rm -rf /opt/tomcat
   sudo curl -O https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
   sudo tar -xzf apache-tomcat-${TOMCAT_VERSION}.tar.gz
   sudo mv apache-tomcat-${TOMCAT_VERSION} tomcat
@@ -21,10 +23,9 @@ if [ ! -d "/opt/tomcat" ]; then
   # Set ownership for ec2-user
   sudo chown -R ec2-user:ec2-user /opt/tomcat
 else
-  echo "✅ Tomcat already installed, skipping..."
+  echo "✅ Tomcat already installed with startup.sh present."
 fi
 
-# === Create Tomcat systemd service ===
 echo "======== Creating Tomcat systemd service ========="
 sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
 [Unit]
@@ -51,34 +52,22 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
-# === Start and enable Tomcat ===
 echo "======== Starting and enabling Tomcat service ========="
 sudo systemctl daemon-reload
 sudo systemctl enable tomcat
-
-# Check if startup script exists before starting
-if [ -f /opt/tomcat/bin/startup.sh ]; then
-  sudo systemctl start tomcat
-else
-  echo "❌ Tomcat startup script not found! Aborting."
-  exit 1
-fi
+sudo systemctl restart tomcat
 
 # === Deploy WAR file ===
 echo "======== Deploying WAR file to Tomcat ========="
 WAR_FILE="Ecomm.war"
+SOURCE_WAR="/home/ec2-user/${WAR_FILE}"
 TARGET_WAR="/opt/tomcat/webapps/${WAR_FILE}"
-
-# Find the actual WAR location from CodeDeploy staging dir
-SOURCE_WAR=$(find /opt/codedeploy-agent/deployment-root/ -name "${WAR_FILE}" | head -n 1)
-
-echo "Looking for WAR file at: $SOURCE_WAR"
 
 if [ -f "$SOURCE_WAR" ]; then
   sudo cp "$SOURCE_WAR" "$TARGET_WAR"
   echo "✅ WAR file copied to Tomcat webapps."
 else
-  echo "❌ WAR file not found in deployment directory!"
+  echo "❌ WAR file not found at $SOURCE_WAR"
   exit 1
 fi
 
