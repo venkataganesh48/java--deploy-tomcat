@@ -34,7 +34,7 @@
   </dependencies>
 
   <build>
-    <finalName>Root</finalName>
+    <finalName>Ecomm</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
