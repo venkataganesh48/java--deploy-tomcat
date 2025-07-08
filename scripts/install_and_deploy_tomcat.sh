@@ -9,16 +9,15 @@ echo "======== Installing Tomcat ========="
 TOMCAT_VERSION=9.0.86
 cd /opt/
 
-# Only install Tomcat if not already installed
 if [ ! -d "/opt/tomcat" ]; then
   sudo curl -O https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
   sudo tar -xzf apache-tomcat-${TOMCAT_VERSION}.tar.gz
   sudo mv apache-tomcat-${TOMCAT_VERSION} tomcat
 
-  # Set execute permission for scripts
+  # Set execute permission for Tomcat scripts
   sudo chmod +x /opt/tomcat/bin/*.sh
 
-  # Give ec2-user ownership to allow systemd to run as this user
+  # Give ec2-user ownership
   sudo chown -R ec2-user:ec2-user /opt/tomcat
 else
   echo "Tomcat is already installed. Skipping reinstallation."
@@ -32,7 +31,6 @@ After=network.target
 
 [Service]
 Type=forking
-
 User=ec2-user
 Group=ec2-user
 
@@ -58,18 +56,22 @@ sudo systemctl enable tomcat
 
 echo "======== Deploying WAR file to Tomcat ========="
 WAR_FILE="Ecomm.war"
-SOURCE_WAR="/home/ec2-user/${WAR_FILE}"
 TARGET_WAR="/opt/tomcat/webapps/${WAR_FILE}"
+
+# Dynamically find WAR file location in CodeDeploy deployment directory
+SOURCE_WAR=$(find /opt/codedeploy-agent/deployment-root/ -name "${WAR_FILE}" | head -n 1)
+
+echo "Looking for WAR file at: $SOURCE_WAR"
 
 if [ -f "$SOURCE_WAR" ]; then
   sudo cp "$SOURCE_WAR" "$TARGET_WAR"
   echo "✅ WAR file deployed to Tomcat."
 else
-  echo "❌ WAR file not found at $SOURCE_WAR"
+  echo "❌ WAR file not found. Expected at: $SOURCE_WAR"
   exit 1
 fi
 
 echo "======== Restarting Tomcat to reload application ========="
 sudo systemctl restart tomcat
 
-echo "======== Deployment Complete ========="
+echo "======== ✅ Deployment Complete ========="
