@@ -39,14 +39,6 @@ else
   echo "Tomcat is already installed. Skipping installation."
 fi
 
-echo "======== Restoring Tomcat Default Homepage ========="
-cd /opt/
-# Download and extract again (in case of skipped above)
-sudo curl -O https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
-sudo tar -xzf apache-tomcat-${TOMCAT_VERSION}.tar.gz
-# Restore index.html into the ROOT app
-sudo cp apache-tomcat-${TOMCAT_VERSION}/webapps/ROOT/index.html /opt/tomcat/webapps/ROOT/
-
 echo "======== Creating tomcat-users.xml with BASIC auth and admin users ========="
 sudo tee /opt/tomcat/conf/tomcat-users.xml > /dev/null <<EOF
 <?xml version='1.0' encoding='utf-8'?>
