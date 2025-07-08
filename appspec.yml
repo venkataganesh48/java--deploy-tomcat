@@ -1,15 +1,10 @@
 version: 0.0
 os: linux
-
 files:
-  - source: target/ECOMM.war
-    destination: /opt/tomcat/webapps
-
+  - source: target/Ecomm.war
+    destination: /home/ec2-user/
 hooks:
   AfterInstall:
-    - location: scripts/configure_tomcat_users.sh
+    - location: scripts/install_and_deploy_tomcat.sh
       timeout: 300
-      runas: root
-    - location: scripts/restart_tomcat.sh
-      timeout: 60
       runas: root
