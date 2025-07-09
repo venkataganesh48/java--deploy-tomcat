@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings>
+ <servers>
+  <server>
+   <id>apache-tomcat</id>
+   <username>admin</username>
+   <password>admin</password>
+  </server>
+ </servers>
+
+</settings>
