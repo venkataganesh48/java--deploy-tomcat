@@ -4,7 +4,7 @@ set -x
 
 echo "======== Installing AWS CodeDeploy Agent ========="
 sudo yum update -y
-sudo yum install -y ruby wget dos2unix
+sudo yum install -y ruby wget 
 
 cd /home/ec2-user
 wget https://aws-codedeploy-us-west-2.s3.amazonaws.com/latest/install
