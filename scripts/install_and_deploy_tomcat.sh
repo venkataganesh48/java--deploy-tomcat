@@ -10,8 +10,8 @@ cd /home/ec2-user
 wget https://aws-codedeploy-us-west-2.s3.amazonaws.com/latest/install
 chmod +x ./install
 sudo ./install auto
-sudo systemctl enable codedeploy-agent
 sudo systemctl start codedeploy-agent
+sudo systemctl enable codedeploy-agent
 sudo systemctl status codedeploy-agent || true
 
 echo "======== Installing Java 11 ========="
