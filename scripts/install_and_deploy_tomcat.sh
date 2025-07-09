@@ -7,7 +7,7 @@ sudo yum update -y
 sudo yum install -y ruby wget
 
 cd /home/ec2-user
-wget https://aws-codedeploy-us-west-2.s3.amazonaws.com/latest/install
+wget https://aws-codedeploy-ap-northeast-3.s3.amazonaws.com/latest/install
 chmod +x ./install
 sudo ./install auto
 
@@ -47,17 +47,17 @@ sudo tee /opt/tomcat/conf/tomcat-users.xml > /dev/null <<EOF
               xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
               version="1.0">
 
+  <!-- Admin user for Tomcat Manager -->
   <role rolename="manager-gui"/>
   <role rolename="manager-script"/>
   <role rolename="manager-jmx"/>
   <role rolename="manager-status"/>
-  <user username="admin" password="admin" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
+  <user username="admin" password="admin" roles="manager-gui,manager-script,manager-jmx,manager-status,admin"/>
+
+  <!-- Application-level role for BASIC auth (matches web.xml) -->
+  <role rolename="admin"/>
 </tomcat-users>
 EOF
-
-echo "======== Removing IP restrictions for manager and host-manager apps ========="
-sudo sed -i 's/<Valve className="org.apache.catalina.valves.RemoteAddrValve".*/<!-- Removed restriction -->/' /opt/tomcat/webapps/manager/META-INF/context.xml || true
-sudo sed -i 's/<Valve className="org.apache.catalina.valves.RemoteAddrValve".*/<!-- Removed restriction -->/' /opt/tomcat/webapps/host-manager/META-INF/context.xml || true
 
 echo "======== Creating Tomcat systemd service ========="
 if [ ! -f "/etc/systemd/system/tomcat.service" ]; then
@@ -92,18 +92,19 @@ fi
 echo "======== Stopping Tomcat to deploy WAR file ========="
 sudo systemctl stop tomcat || true
 
-echo "======== Deploying WAR file to Tomcat (without replacing ROOT) ========="
+echo "======== Deploying WAR file to Tomcat ========="
 WAR_NAME="Ecomm.war"
 SOURCE_WAR="/home/ec2-user/${WAR_NAME}"
 TARGET_WAR="/opt/tomcat/webapps/${WAR_NAME}"
+APP_DIR="/opt/tomcat/webapps/Root"
 
-# Clean up old version of Ecomm
-sudo rm -rf /opt/tomcat/webapps/Ecomm
+# Clean up previous deployment
+sudo rm -rf "$APP_DIR"
 sudo rm -f "$TARGET_WAR"
 
 if [ -f "$SOURCE_WAR" ]; then
   sudo cp "$SOURCE_WAR" "$TARGET_WAR"
-  echo "✅ Ecomm WAR copied to /Ecomm"
+  echo "✅ WAR file copied to Tomcat webapps."
 else
   echo "❌ WAR file not found at $SOURCE_WAR"
   exit 1
@@ -115,6 +116,3 @@ sudo systemctl enable tomcat
 sudo systemctl restart tomcat
 
 echo "======== Deployment Complete ========="
-echo "🌐 Tomcat Homepage:     http://<your-ec2-ip>:8080/"
-echo "🔐 Tomcat Manager:      http://<your-ec2-ip>:8080/manager/html"
-echo "🛒 Ecomm App:           http://<your-ec2-ip>:8080/Ecomm/"
