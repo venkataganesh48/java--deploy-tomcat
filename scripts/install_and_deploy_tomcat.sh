@@ -7,7 +7,7 @@ sudo yum update -y
 sudo yum install -y ruby wget
 
 cd /home/ec2-user
-wget https://aws-codedeploy-us-west-2.s3.amazonaws.com/latest/install
+wget https://aws-codedeploy-ap-northeast-3.s3.amazonaws.com/latest/install
 chmod +x ./install
 sudo ./install auto
 
@@ -53,6 +53,9 @@ sudo tee /opt/tomcat/conf/tomcat-users.xml > /dev/null <<EOF
   <role rolename="manager-jmx"/>
   <role rolename="manager-status"/>
   <user username="admin" password="admin" roles="manager-gui,manager-script,manager-jmx,manager-status,admin"/>
+
+  <!-- Application-level role for BASIC auth (matches web.xml) -->
+  <role rolename="admin"/>
 </tomcat-users>
 EOF
 
@@ -89,13 +92,13 @@ fi
 echo "======== Stopping Tomcat to deploy WAR file ========="
 sudo systemctl stop tomcat || true
 
-echo "======== Deploying WAR file to Tomcat (not replacing ROOT) ========="
+echo "======== Deploying WAR file to Tomcat ========="
 WAR_NAME="Ecomm.war"
 SOURCE_WAR="/home/ec2-user/${WAR_NAME}"
 TARGET_WAR="/opt/tomcat/webapps/${WAR_NAME}"
 APP_DIR="/opt/tomcat/webapps/Ecomm"
 
-# Clean up previous deployment but NOT the ROOT
+# Clean up previous deployment
 sudo rm -rf "$APP_DIR"
 sudo rm -f "$TARGET_WAR"
 
