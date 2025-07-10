@@ -96,7 +96,7 @@ echo "======== Deploying WAR file to Tomcat ========="
 WAR_NAME="Ecomm.war"
 SOURCE_WAR="/home/ec2-user/${WAR_NAME}"
 TARGET_WAR="/opt/tomcat/webapps/${WAR_NAME}"
-APP_DIR="/opt/tomcat/webapps/Root"
+APP_DIR="/opt/tomcat/webapps"
 
 # Clean up previous deployment
 sudo rm -rf "$APP_DIR"
