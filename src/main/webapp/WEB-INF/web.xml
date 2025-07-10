@@ -5,11 +5,11 @@
 
 <web-app>
 
-  <!-- Protect all URLs with BASIC auth -->
+  <!-- Protect only your app URLs -->
   <security-constraint>
     <web-resource-collection>
       <web-resource-name>Protected Area</web-resource-name>
-      <url-pattern>/*</url-pattern>
+      <url-pattern>/Ecomm/*</url-pattern> <!-- ✅ Restrict only to your app -->
       <http-method>GET</http-method>
       <http-method>POST</http-method>
     </web-resource-collection>
