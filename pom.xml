@@ -16,7 +16,6 @@
   </properties>
 
   <dependencies>
-    <!-- Unit testing -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -24,7 +23,6 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- Servlet API -->
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>javax.servlet-api</artifactId>
