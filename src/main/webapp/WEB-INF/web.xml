@@ -1,4 +1,3 @@
-
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE web-app
   PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
@@ -10,7 +9,7 @@
   <security-constraint>
     <web-resource-collection>
       <web-resource-name>Protected Area</web-resource-name>
-      <url-pattern>/Eccom/*</url-pattern>
+      <url-pattern>/*</url-pattern>
       <http-method>GET</http-method>
       <http-method>POST</http-method>
     </web-resource-collection>
@@ -34,4 +33,3 @@
   </security-role>
 
 </web-app>
- 
