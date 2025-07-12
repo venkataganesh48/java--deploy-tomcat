@@ -4,19 +4,4 @@
   "http://java.sun.com/dtd/web-app_2_3.dtd">
 
 <web-app>
-
-  <!-- Protect all URLs with BASIC auth -->
- 
-
-  <!-- Use BASIC authentication -->
-  <login-config>
-    <auth-method>BASIC</auth-method>
-    <realm-name>MyRealm</realm-name>
-  </login-config>
-
-  <!-- Declare the security role -->
-  <security-role>
-    <role-name>admin</role-name>
-  </security-role>
-
 </web-app>
