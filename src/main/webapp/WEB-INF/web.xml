@@ -6,7 +6,7 @@
 <web-app>
 
   <!-- Protect all URLs with BASIC auth -->
-  <security-constraint>
+  ###<security-constraint>
     <web-resource-collection>
       <web-resource-name>Protected Area</web-resource-name>
       <url-pattern>/*</url-pattern>
@@ -19,7 +19,7 @@
     <user-data-constraint>
       <transport-guarantee>NONE</transport-guarantee>
     </user-data-constraint>
-  </security-constraint>
+  ###</security-constraint>
 
   <!-- Use BASIC authentication -->
   <login-config>
