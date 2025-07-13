@@ -106,7 +106,7 @@ TOMCAT_USERS_FILE="${TOMCAT_DIR}/conf/tomcat-users.xml"
 if ! grep -q 'manager-gui' "$TOMCAT_USERS_FILE"; then
   sudo sed -i '/<\/tomcat-users>/i \
 <role rolename="manager-gui"/>\n\
-<user username="admin" password="admin123" roles="manager-gui"/>' "$TOMCAT_USERS_FILE"
+<user username="admin" password="admin" roles="manager-gui"/>' "$TOMCAT_USERS_FILE"
   echo "✅ Admin user added to tomcat-users.xml"
 else
   echo "✅ Admin user already configured."
