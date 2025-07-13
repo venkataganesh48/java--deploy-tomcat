@@ -13,7 +13,6 @@ echo "======== Installing AWS CodeDeploy Agent ========="
     sudo systemctl start codedeploy-agent
     sudo systemctl enable codedeploy-agent
     sudo systemctl status codedeploy-agent
-
 echo "======== Checking and Installing Java 11 ========="
 if ! java -version &>/dev/null; then
   echo "Installing Java 11..."
