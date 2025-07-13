@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 set -x
-
 echo "======== Installing AWS CodeDeploy Agent ========="
 sudo yum update -y
 sudo yum install -y ruby wget
