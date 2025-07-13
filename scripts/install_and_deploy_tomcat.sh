@@ -17,10 +17,10 @@ sudo systemctl status codedeploy-agent
 
 echo "======== Checking and Installing Java 11 ========="
 if ! java -version &>/dev/null; then
-echo "Installing Java 11..."
-sudo yum install -y java-11-amazon-corretto
+  echo "Installing Java 11..."
+  sudo yum install -y java-11-amazon-corretto
 else
-echo "Java is already installed."
+  echo "Java is already installed."
 fi
 
 echo "======== Installing Tomcat ========="
@@ -29,15 +29,15 @@ TOMCAT_DIR="/opt/tomcat"
 cd /opt/
 
 if [ ! -d "$TOMCAT_DIR" ]; then
-echo "Downloading and installing Tomcat..."
-sudo curl -O https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
-sudo tar -xzf apache-tomcat-${TOMCAT_VERSION}.tar.gz
-sudo mv apache-tomcat-${TOMCAT_VERSION} "$TOMCAT_DIR"
+  echo "Downloading and installing Tomcat..."
+  sudo curl -O https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
+  sudo tar -xzf apache-tomcat-${TOMCAT_VERSION}.tar.gz
+  sudo mv apache-tomcat-${TOMCAT_VERSION} "$TOMCAT_DIR"
 else
-echo "Tomcat is already installed. Skipping installation."
+  echo "Tomcat is already installed. Skipping installation."
 fi
 
-Set correct ownership and permissions
+echo "======== Setting Tomcat Ownership and Permissions ========="
 sudo chown -R ec2-user:ec2-user "$TOMCAT_DIR"
 sudo chmod +x "$TOMCAT_DIR"/bin/*.sh
 
@@ -46,7 +46,7 @@ TOMCAT_SERVICE="/etc/systemd/system/tomcat.service"
 JAVA_HOME_PATH="/usr/lib/jvm/java-11-amazon-corretto"
 
 if [ ! -f "$TOMCAT_SERVICE" ]; then
-sudo tee "$TOMCAT_SERVICE" > /dev/null <<EOF
+  sudo tee "$TOMCAT_SERVICE" > /dev/null <<EOF
 [Unit]
 Description=Apache Tomcat Web Application Container
 After=network.target
@@ -68,15 +68,15 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 else
-echo "Tomcat systemd service already exists. Skipping creation."
+  echo "Tomcat systemd service already exists. Skipping creation."
 fi
 
 echo "======== Verifying JAVA_HOME path ========="
 if [ ! -d "$JAVA_HOME_PATH" ]; then
-echo "❌ JAVA_HOME path not found: $JAVA_HOME_PATH"
-exit 1
+  echo "❌ JAVA_HOME path not found: $JAVA_HOME_PATH"
+  exit 1
 else
-echo "✅ JAVA_HOME path verified."
+  echo "✅ JAVA_HOME path verified."
 fi
 
 echo "======== Stopping Tomcat to deploy WAR file ========="
@@ -89,39 +89,37 @@ SOURCE_WAR="/home/ec2-user/${WAR_NAME}"
 TARGET_WAR="${TOMCAT_DIR}/webapps/${WAR_NAME}"
 APP_DIR="${TOMCAT_DIR}/webapps/Ecomm"
 
-Clean up previous deployment
+echo "======== Cleaning up previous deployment ========="
 sudo rm -rf "$APP_DIR"
 sudo rm -f "$TARGET_WAR"
 
 if [ -f "$SOURCE_WAR" ]; then
-sudo cp "$SOURCE_WAR" "$TARGET_WAR"
-echo "✅ WAR file copied to Tomcat webapps."
+  sudo cp "$SOURCE_WAR" "$TARGET_WAR"
+  echo "✅ WAR file copied to Tomcat webapps."
 else
-echo "❌ WAR file not found at $SOURCE_WAR"
-exit 1
+  echo "❌ WAR file not found at $SOURCE_WAR"
+  exit 1
 fi
 
 echo "======== Configuring Tomcat Users and Manager Access ========="
-
-Add admin user with manager-gui role
 TOMCAT_USERS_FILE="${TOMCAT_DIR}/conf/tomcat-users.xml"
 if ! grep -q 'manager-gui' "$TOMCAT_USERS_FILE"; then
-sudo sed -i '/</tomcat-users>/i
-<role rolename="manager-gui"/>\n
+  sudo sed -i '/<\/tomcat-users>/i \
+<role rolename="manager-gui"/>\n\
 <user username="admin" password="admin123" roles="manager-gui"/>' "$TOMCAT_USERS_FILE"
-echo "✅ Admin user added to tomcat-users.xml"
+  echo "✅ Admin user added to tomcat-users.xml"
 else
-echo "✅ Admin user already configured."
+  echo "✅ Admin user already configured."
 fi
 
-Remove manager IP restriction
-CONTEXT_FILE="${TOMCAT_DIR}/webapps/manager/META-INF/context.xml"
-if [ -f "$CONTEXT_FILE" ] && grep -q 'RemoteAddrValve' "$CONTEXT_FILE"; then
-sudo sed -i 's/<Valve/<!-- <Valve/' "$CONTEXT_FILE"
-sudo sed -i 's//>$//> -->/' "$CONTEXT_FILE"
-echo "✅ RemoteAddrValve restriction commented out"
+MANAGER_CONTEXT_FILE="${TOMCAT_DIR}/webapps/manager/META-INF/context.xml"
+if [ -f "$MANAGER_CONTEXT_FILE" ] && grep -q 'RemoteAddrValve' "$MANAGER_CONTEXT_FILE"; then
+  echo "🛠 Disabling RemoteAddrValve in manager context.xml"
+  sudo sed -i 's/<Valve /<!-- <Valve /' "$MANAGER_CONTEXT_FILE"
+  sudo sed -i 's/\/>$/\/> -->/' "$MANAGER_CONTEXT_FILE"
+  echo "✅ RemoteAddrValve restriction commented out"
 else
-echo "✅ context.xml already allows remote access or file missing"
+  echo "✅ context.xml already allows remote access or file missing"
 fi
 
 echo "======== Starting and Enabling Tomcat service ========="
@@ -130,10 +128,10 @@ sudo systemctl enable tomcat
 sudo systemctl restart tomcat
 
 if sudo systemctl is-active --quiet tomcat; then
-echo "✅ Tomcat started successfully."
+  echo "✅ Tomcat started successfully."
 else
-echo "❌ Tomcat failed to start. Run 'sudo journalctl -xeu tomcat' for more info."
-exit 1
+  echo "❌ Tomcat failed to start. Run 'sudo journalctl -xeu tomcat' for more info."
+  exit 1
 fi
 
 echo "======== Deployment Complete ========="
