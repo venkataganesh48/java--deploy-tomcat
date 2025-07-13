@@ -4,12 +4,10 @@ set -x
 echo "======== Installing AWS CodeDeploy Agent ========="
     sudo yum update -y
     sudo yum install -y ruby wget
-    
     cd /home/ec2-user
     wget https://aws-codedeploy-ap-northeast-3.s3.amazonaws.com/latest/install
     chmod +x ./install
-    sudo ./install auto
-    
+    sudo ./install auto 
     sudo systemctl start codedeploy-agent
     sudo systemctl enable codedeploy-agent
     sudo systemctl status codedeploy-agent
@@ -20,12 +18,10 @@ if ! java -version &>/dev/null; then
 else
   echo "Java is already installed."
 fi
-
 echo "======== Installing Tomcat ========="
 TOMCAT_VERSION=9.0.86
 sudo mkdir -p /opt
 cd /opt/
-
 if [ ! -d "/opt/tomcat" ]; then
   echo "Downloading and installing Tomcat..."
   sudo curl -O https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
@@ -42,33 +38,26 @@ if [ ! -f "/etc/systemd/system/tomcat.service" ]; then
 [Unit]
 Description=Apache Tomcat Web Application Container
 After=network.target
-
 [Service]
 Type=forking
 User=ec2-user
 Group=ec2-user
-
 Environment=JAVA_HOME=/usr/lib/jvm/java-11-amazon-corretto
 Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid
 Environment=CATALINA_HOME=/opt/tomcat
 Environment=CATALINA_BASE=/opt/tomcat
-
 ExecStart=/opt/tomcat/bin/startup.sh
 ExecStop=/opt/tomcat/bin/shutdown.sh
-
 Restart=always
 RestartSec=10
-
 [Install]
 WantedBy=multi-user.target
 EOF
 else
   echo "Tomcat systemd service already exists. Skipping creation."
 fi
-
 echo "======== Stopping Tomcat to deploy WAR file ========="
 sudo systemctl stop tomcat || true
-
 echo "======== Deploying WAR file to Tomcat ========="
 WAR_NAME="Ecomm.war"
 SOURCE_WAR="/home/ec2-user/${WAR_NAME}"
@@ -86,7 +75,6 @@ else
   echo "❌ WAR file not found at $SOURCE_WAR"
   exit 1
 fi
-
 echo "======== Starting and Enabling Tomcat service ========="
 sudo systemctl daemon-reload
 sudo systemctl enable tomcat
