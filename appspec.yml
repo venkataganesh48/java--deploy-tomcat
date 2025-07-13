@@ -9,24 +9,24 @@ hooks:
   ApplicationStop:
     - location: scripts/stop_tomcat.sh
       timeout: 20
-      runas: root
+      runas: ec2-user
 
   BeforeInstall:
     - location: scripts/cleanup.sh
       timeout: 20
-      runas: root
+      runas: ec2-user
 
   AfterInstall:
     - location: scripts/copy_war.sh
       timeout: 20
-      runas: root
+      runas: ec2-user
 
   ApplicationStart:
     - location: scripts/start_tomcat.sh
       timeout: 20
-      runas: root
+      runas: ec2-user
 
   ValidateService:
     - location: scripts/validate.sh
       timeout: 20
-      runas: root
+      runas: ec2-user
