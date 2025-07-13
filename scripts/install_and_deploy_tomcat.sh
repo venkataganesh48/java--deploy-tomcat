@@ -1,5 +1,3 @@
-scripts/install_and_deploy_tomcat.sh
-
 #!/bin/bash
 set -e
 set -x
@@ -41,27 +39,6 @@ else
   echo "Tomcat is already installed. Skipping installation."
 fi
 
-echo "======== Creating tomcat-users.xml with BASIC auth and admin users ========="
-sudo tee /opt/tomcat/conf/tomcat-users.xml > /dev/null <<EOF
-<?xml version='1.0' encoding='utf-8'?>
-<tomcat-users xmlns="http://tomcat.apache.org/xml"
-              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-              xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
-              version="1.0">
-
-  <!-- Admin user for Tomcat Manager -->
-  <role rolename="manager-gui"/>
-  <role rolename="manager-script"/>
-  <role rolename="manager-jmx"/>
-  <role rolename="manager-status"/>
-  <user username="admin" password="admin" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
-
-  <!-- App user for BASIC auth on Ecomm.war -->
-  <role rolename="user"/>
-  <user username="admin" password="admin" roles="user"/>
-
-</tomcat-users>
-EOF
 
 echo "======== Creating Tomcat systemd service ========="
 if [ ! -f "/etc/systemd/system/tomcat.service" ]; then
