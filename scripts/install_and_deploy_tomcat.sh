@@ -39,25 +39,27 @@ else
   echo "Tomcat is already installed. Skipping installation."
 fi
 
-echo "======== Creating tomcat-users.xml with BASIC auth and admin users ========="
+echo "======== Configuring Tomcat Users ========="
 sudo tee /opt/tomcat/conf/tomcat-users.xml > /dev/null <<EOF
 <?xml version='1.0' encoding='utf-8'?>
-<tomcat-users xmlns="http://tomcat.apache.org/xml"
-              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-              xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
-              version="1.0">
-
-  <!-- Admin user for Tomcat Manager -->
+<tomcat-users>
   <role rolename="manager-gui"/>
   <role rolename="manager-script"/>
   <role rolename="manager-jmx"/>
   <role rolename="manager-status"/>
-  <user username="admin" password="admin" roles="manager-gui,manager-script,manager-jmx,manager-status,admin"/>
-
-  <!-- Application-level role for BASIC auth (matches web.xml) -->
-  <role rolename="admin"/>
+  <user username="admin" password="admin" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
 </tomcat-users>
 EOF
+
+echo "======== Removing IP restriction from manager context.xml ========="
+MANAGER_CONTEXT_FILE="/opt/tomcat/webapps/manager/META-INF/context.xml"
+if [ -f "$MANAGER_CONTEXT_FILE" ]; then
+  sudo sed -i 's/<Valve/\<!-- <Valve/' "$MANAGER_CONTEXT_FILE"
+  sudo sed -i 's/\/>$/\/> -->/' "$MANAGER_CONTEXT_FILE"
+  echo "✅ RemoteAddrValve restriction commented out"
+else
+  echo "⚠️ Manager context.xml not found. Skipping IP restriction removal."
+fi
 
 echo "======== Creating Tomcat systemd service ========="
 if [ ! -f "/etc/systemd/system/tomcat.service" ]; then
@@ -98,7 +100,6 @@ SOURCE_WAR="/home/ec2-user/${WAR_NAME}"
 TARGET_WAR="/opt/tomcat/webapps/${WAR_NAME}"
 APP_DIR="/opt/tomcat/webapps/Ecomm"
 
-# Clean up previous deployment
 sudo rm -rf "$APP_DIR"
 sudo rm -f "$TARGET_WAR"
 
