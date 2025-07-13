@@ -4,14 +4,15 @@ set -x
 
 echo "======== Installing AWS CodeDeploy Agent ========="
 sudo yum update -y
-sudo yum install -y ruby wget
+sudo yum install -y ruby wget dos2unix
+
 cd /home/ec2-user
 wget https://aws-codedeploy-ap-northeast-3.s3.amazonaws.com/latest/install
 chmod +x ./install
-sudo ./install auto 
+sudo ./install auto
 sudo systemctl start codedeploy-agent
 sudo systemctl enable codedeploy-agent
-sudo systemctl status codedeploy-agent
+sudo systemctl status codedeploy-agent || true
 
 echo "======== Checking and Installing Java 11 ========="
 if ! java -version &>/dev/null; then
@@ -30,6 +31,7 @@ if [ ! -d "$TOMCAT_DIR" ]; then
   sudo curl -O https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
   sudo tar -xzf apache-tomcat-${TOMCAT_VERSION}.tar.gz
   sudo mv apache-tomcat-${TOMCAT_VERSION} "$TOMCAT_DIR"
+  sudo dos2unix $TOMCAT_DIR/bin/*.sh
   sudo chmod +x $TOMCAT_DIR/bin/*.sh
   sudo chown -R ec2-user:ec2-user "$TOMCAT_DIR"
 else
