@@ -2,27 +2,26 @@ version: 0.0
 os: linux
 
 files:
-
-source: target/Ecomm.war
-destination: /home/ec2-user/
+  - source: target/Ecomm.war
+    destination: /home/ec2-user/
 
 hooks:
-ApplicationStop:
-- location: scripts/stop_tomcat.sh
-timeout: 60
-runas: root
+  ApplicationStop:
+    - location: scripts/stop_tomcat.sh
+      timeout: 60
+      runas: root
 
-BeforeInstall:
-- location: scripts/cleanup.sh
-timeout: 60
-runas: root
+  BeforeInstall:
+    - location: scripts/cleanup.sh
+      timeout: 60
+      runas: root
 
-AfterInstall:
-- location: scripts/install_and_deploy_tomcat.sh
-timeout: 300
-runas: ec2-user
+  AfterInstall:
+    - location: scripts/install_and_deploy_tomcat.sh
+      timeout: 300
+      runas: ec2-user
 
-ApplicationStart:
-- location: scripts/start_tomcat.sh
-timeout: 60
-runas: root
+  ApplicationStart:
+    - location: scripts/start_tomcat.sh
+      timeout: 60
+      runas: root
