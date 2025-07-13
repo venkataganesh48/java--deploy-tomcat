@@ -22,9 +22,11 @@ phases:
     commands:
       - echo Build completed. Preparing artifacts...
       - ls -l target/
+      - ls -l scripts/
 
 artifacts:
   files:
     - target/*.war
     - appspec.yml
     - scripts/install_and_deploy_tomcat.sh
+  discard-paths: no
