@@ -27,18 +27,6 @@ case "$PHASE" in
       sudo yum install -y java-11-amazon-corretto
     fi
 
-    # --- Install CodeDeploy Agent only if not already running ---
-    if ! systemctl is-active --quiet codedeploy-agent; then
-      echo "Installing CodeDeploy agent..."
-      cd /home/ec2-user
-      sudo yum install -y ruby wget
-      wget https://aws-codedeploy-ap-northeast-3.s3.amazonaws.com/latest/install
-      chmod +x ./install
-      sudo ./install auto
-      sudo systemctl enable codedeploy-agent
-      sudo systemctl start codedeploy-agent
-    fi
-
     # --- Install Tomcat only if not already installed ---
     if [ ! -d "/opt/tomcat9" ]; then
       echo "Installing Tomcat 9.0.86..."
