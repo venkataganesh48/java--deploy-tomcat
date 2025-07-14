@@ -20,14 +20,14 @@ case "$PHASE" in
   AfterInstall)
     echo "===== AfterInstall: Installing Java, Tomcat, Deploying WAR ====="
 
-    # --- Install Java 11 only if not already present ---
+    # Install Java 11 only if missing
     if ! java -version 2>&1 | grep -q "11"; then
       echo "Installing Java 11..."
       sudo amazon-linux-extras enable corretto11
       sudo yum install -y java-11-amazon-corretto
     fi
 
-    # --- Install Tomcat only if not already installed ---
+    # Install Tomcat 9 only if not already installed
     if [ ! -d "/opt/tomcat9" ]; then
       echo "Installing Tomcat 9.0.86..."
       cd /opt
@@ -37,7 +37,7 @@ case "$PHASE" in
       sudo chown -R ec2-user:ec2-user /opt/tomcat9
     fi
 
-    # --- Create systemd service for Tomcat if not exists ---
+    # Setup systemd service if not present
     if [ ! -f "/etc/systemd/system/tomcat.service" ]; then
       echo "Creating systemd service for Tomcat..."
       cat <<EOF | sudo tee /etc/systemd/system/tomcat.service
@@ -67,18 +67,18 @@ EOF
       sudo systemctl enable tomcat
     fi
 
-    # --- Deploy WAR file ---
+    # Deploy WAR file to webapps/
     echo "Deploying Ecomm.war to Tomcat..."
     cp /home/ec2-user/Ecomm.war /opt/tomcat9/webapps/
     sudo chown ec2-user:ec2-user /opt/tomcat9/webapps/Ecomm.war
 
-    # --- Copy tomcat-users.xml from repo if exists ---
+    # Replace tomcat-users.xml from repo if available
     if [ -f "/home/ec2-user/tomcat-users.xml" ]; then
-      echo "Using custom tomcat-users.xml from repo..."
+      echo "Replacing tomcat-users.xml..."
       cp /home/ec2-user/tomcat-users.xml /opt/tomcat9/conf/tomcat-users.xml
       sudo chown ec2-user:ec2-user /opt/tomcat9/conf/tomcat-users.xml
     else
-      echo "No tomcat-users.xml found in repo. Skipping user config."
+      echo "No custom tomcat-users.xml found. Skipping."
     fi
 
     sudo chown -R ec2-user:ec2-user /opt/tomcat9
@@ -90,7 +90,7 @@ EOF
     ;;
 
   *)
-    echo "Unknown phase: $PHASE"
+    echo "❌ Unknown lifecycle phase: $PHASE"
     exit 1
     ;;
 esac
