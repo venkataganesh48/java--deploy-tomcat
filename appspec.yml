@@ -33,3 +33,9 @@ hooks:
       runas: root
       args:
         - ApplicationStart
+
+  ValidateService:
+    - location: scripts/install_and_deploy_tomcat.sh
+      runas: root
+      args:
+        - ValidateService
