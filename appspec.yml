@@ -12,20 +12,24 @@ files:
 hooks:
   ApplicationStop:
     - location: scripts/install_and_deploy_tomcat.sh
-      args: ["ApplicationStop"]
       runas: root
+      args:
+        - ApplicationStop
 
   BeforeInstall:
     - location: scripts/install_and_deploy_tomcat.sh
-      args: ["BeforeInstall"]
       runas: root
+      args:
+        - BeforeInstall
 
   AfterInstall:
     - location: scripts/install_and_deploy_tomcat.sh
-      args: ["AfterInstall"]
       runas: root
+      args:
+        - AfterInstall
 
   ApplicationStart:
     - location: scripts/install_and_deploy_tomcat.sh
-      args: ["ApplicationStart"]
       runas: root
+      args:
+        - ApplicationStart
