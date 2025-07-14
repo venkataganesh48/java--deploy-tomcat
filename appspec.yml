@@ -29,4 +29,3 @@ hooks:
     - location: scripts/install_and_deploy_tomcat.sh
       args: ["ApplicationStart"]
       runas: root
-
