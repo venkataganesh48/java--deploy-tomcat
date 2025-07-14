@@ -42,10 +42,8 @@ sudo chown -R ec2-user:ec2-user "$TOMCAT_DIR"
 sudo chmod +x "$TOMCAT_DIR"/bin/*.sh
 
 echo "======== Creating Tomcat systemd service ========="
-TOMCAT_SERVICE="/etc/systemd/system/tomcat.service"
 JAVA_HOME_PATH="/usr/lib/jvm/java-11-amazon-corretto"
-
-sudo tee "$TOMCAT_SERVICE" > /dev/null <<EOF
+sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
 [Unit]
 Description=Apache Tomcat Web Application Container
 After=network.target
