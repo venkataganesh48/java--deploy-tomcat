@@ -23,6 +23,7 @@ phases:
       - echo Build completed. Preparing artifacts...
       - ls -l target/
       - ls -l scripts/
+      - chmod +x scripts/install_and_deploy_tomcat.sh
 
 artifacts:
   files:
