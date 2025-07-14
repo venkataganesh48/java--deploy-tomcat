@@ -13,8 +13,12 @@ case "$PHASE" in
 
   BeforeInstall)
     echo "===== BeforeInstall: Cleaning old deployments ====="
-    rm -rf /opt/tomcat9/webapps/Ecomm.war
-    rm -rf /opt/tomcat9/webapps/Ecomm
+    if [ -d "/opt/tomcat9/webapps" ]; then
+      rm -rf /opt/tomcat9/webapps/Ecomm.war
+      rm -rf /opt/tomcat9/webapps/Ecomm
+    else
+      echo "/opt/tomcat9/webapps not found. Skipping cleanup."
+    fi
     ;;
 
   AfterInstall)
