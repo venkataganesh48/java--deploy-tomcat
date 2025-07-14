@@ -2,6 +2,9 @@
 set -e
 set -x
 
+# Optional: Save logs for debugging
+exec > >(tee -a /tmp/codedeploy_log.txt) 2>&1
+
 PHASE=$1
 
 case "$PHASE" in
@@ -14,10 +17,11 @@ case "$PHASE" in
   BeforeInstall)
     echo "===== BeforeInstall: Cleaning old deployments ====="
     if [ -d "/opt/tomcat9/webapps" ]; then
-      rm -rf /opt/tomcat9/webapps/Ecomm.war
-      rm -rf /opt/tomcat9/webapps/Ecomm
+      echo "Cleaning previous Ecomm app..."
+      rm -f /opt/tomcat9/webapps/Ecomm.war || echo "WAR not found"
+      rm -rf /opt/tomcat9/webapps/Ecomm || echo "Directory not found"
     else
-      echo "/opt/tomcat9/webapps not found. Skipping cleanup."
+      echo "/opt/tomcat9/webapps does not exist yet. Skipping cleanup."
     fi
     ;;
 
@@ -41,7 +45,7 @@ case "$PHASE" in
       sudo chown -R ec2-user:ec2-user /opt/tomcat9
     fi
 
-    # Setup systemd service if not present
+    # Setup systemd service if not already created
     if [ ! -f "/etc/systemd/system/tomcat.service" ]; then
       echo "Creating systemd service for Tomcat..."
       cat <<EOF | sudo tee /etc/systemd/system/tomcat.service
@@ -71,18 +75,18 @@ EOF
       sudo systemctl enable tomcat
     fi
 
-    # Deploy WAR file to webapps/
+    # Deploy WAR
     echo "Deploying Ecomm.war to Tomcat..."
     cp /home/ec2-user/Ecomm.war /opt/tomcat9/webapps/
     sudo chown ec2-user:ec2-user /opt/tomcat9/webapps/Ecomm.war
 
-    # Replace tomcat-users.xml from repo if available
+    # Deploy tomcat-users.xml if provided
     if [ -f "/home/ec2-user/tomcat-users.xml" ]; then
       echo "Replacing tomcat-users.xml..."
       cp /home/ec2-user/tomcat-users.xml /opt/tomcat9/conf/tomcat-users.xml
       sudo chown ec2-user:ec2-user /opt/tomcat9/conf/tomcat-users.xml
     else
-      echo "No custom tomcat-users.xml found. Skipping."
+      echo "tomcat-users.xml not found in /home/ec2-user/. Skipping."
     fi
 
     sudo chown -R ec2-user:ec2-user /opt/tomcat9
