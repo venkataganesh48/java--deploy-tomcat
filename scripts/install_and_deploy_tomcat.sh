@@ -28,7 +28,26 @@ sudo tar -xvzf apache-tomcat-${TOMCAT_VERSION}.tar.gz
 sudo ln -s apache-tomcat-${TOMCAT_VERSION} tomcat9
 sudo chmod +x /opt/tomcat9/bin/*.sh
 
-# === 4. Configure systemd service ===
+# === 4. Configure tomcat-users.xml before starting ===
+echo "=== Configuring tomcat-users.xml ==="
+sudo tee /opt/tomcat9/conf/tomcat-users.xml > /dev/null <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<tomcat-users xmlns="http://tomcat.apache.org/xml"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
+               version="1.0">
+  <role rolename="manager-gui"/>
+  <role rolename="admin-gui"/>
+  <user username="admin" password="admin123" roles="manager-gui,admin-gui"/>
+</tomcat-users>
+EOF
+
+# === 5. Deploy WAR File BEFORE starting tomcat ===
+echo "=== Deploying WAR File ==="
+[ -f /home/ec2-user/Ecomm.war ] || { echo "❌ Ecomm.war not found!"; exit 1; }
+sudo cp /home/ec2-user/Ecomm.war /opt/tomcat9/webapps/
+
+# === 6. Create systemd service ===
 echo "=== Creating systemd service for Tomcat ==="
 sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
 [Unit]
@@ -60,33 +79,10 @@ EOF
 sudo systemctl daemon-reexec
 sudo systemctl daemon-reload
 sudo systemctl enable tomcat
+
+# === 7. Start Tomcat ===
 sudo systemctl start tomcat
 
-# === 5. Deploy WAR File ===
-echo "=== Deploying WAR File ==="
-sudo cp /home/ec2-user/Ecomm.war /opt/tomcat9/webapps/
-
-# === 6. Configure tomcat-users.xml for manager access ===
-echo "=== Configuring tomcat-users.xml ==="
-sudo tee /opt/tomcat9/conf/tomcat-users.xml > /dev/null <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<tomcat-users xmlns="http://tomcat.apache.org/xml"
-               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-               xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
-               version="1.0">
-  <role rolename="manager-gui"/>
-  <role rolename="admin-gui"/>
-  <user username="admin" password="admin123" roles="manager-gui,admin-gui"/>
-</tomcat-users>
-EOF
-
-# === 7. Prevent ROOT from being overwritten by Ecomm ===
-echo "=== Ensuring Tomcat homepage loads first ==="
-# Do NOT replace ROOT.war with your app. Deploy only Ecomm.war.
-# So / shows Tomcat homepage, and /Ecomm shows your app
-
-# === 8. Restart Tomcat to apply everything ===
-sudo systemctl restart tomcat
-
+# === 8. Final Output ===
 echo "✅ Tomcat deployed. Visit http://<your-ec2-public-ip>:8080/"
 echo "➡ Click 'Manager App' -> Login with admin/admin123 -> Find and click 'Ecomm' app"
