@@ -51,15 +51,14 @@ sudo tee /opt/tomcat/conf/tomcat-users.xml > /dev/null <<EOF
 </tomcat-users>
 EOF
 
-echo "======== Removing IP restriction from manager context.xml ========="
-MANAGER_CONTEXT_FILE="/opt/tomcat/webapps/manager/META-INF/context.xml"
-if [ -f "$MANAGER_CONTEXT_FILE" ]; then
-  sudo sed -i 's/<Valve/\<!-- <Valve/' "$MANAGER_CONTEXT_FILE"
-  sudo sed -i 's/\/>$/\/> -->/' "$MANAGER_CONTEXT_FILE"
-  echo "✅ RemoteAddrValve restriction commented out"
-else
-  echo "⚠️ Manager context.xml not found. Skipping IP restriction removal."
-fi
+echo "======== Overriding Manager Context to Allow Remote Access ========="
+sudo mkdir -p /opt/tomcat/conf/Catalina/localhost
+
+sudo tee /opt/tomcat/conf/Catalina/localhost/manager.xml > /dev/null <<EOF
+<Context privileged="true" antiResourceLocking="false" antiJARLocking="false">
+  <Valve className="org.apache.catalina.valves.RemoteAddrValve" allow=".*" />
+</Context>
+EOF
 
 echo "======== Creating Tomcat systemd service ========="
 if [ ! -f "/etc/systemd/system/tomcat.service" ]; then
