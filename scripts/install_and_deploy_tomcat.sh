@@ -2,7 +2,8 @@
 set -e
 set -x
 
-echo "======== Installing AWS CodeDeploy Agent ========="
+# === 1. Install AWS CodeDeploy Agent ===
+echo "=== Installing CodeDeploy Agent ==="
 sudo yum update -y
 sudo yum install -y ruby wget
 
@@ -10,100 +11,82 @@ cd /home/ec2-user
 wget https://aws-codedeploy-ap-northeast-3.s3.amazonaws.com/latest/install
 chmod +x ./install
 sudo ./install auto
-
 sudo systemctl start codedeploy-agent
 sudo systemctl enable codedeploy-agent
-sudo systemctl status codedeploy-agent
 
-echo "======== Checking and Installing Java 11 ========="
-if ! java -version &>/dev/null; then
-  echo "Installing Java 11..."
-  sudo yum install -y java-11-amazon-corretto
-else
-  echo "Java is already installed."
-fi
+# === 2. Install Java ===
+echo "=== Installing Java ==="
+sudo yum install -y java-11-amazon-corretto
+java -version
 
-echo "======== Installing Tomcat ========="
+# === 3. Install Tomcat 9 ===
+echo "=== Installing Tomcat 9 ==="
 TOMCAT_VERSION=9.0.86
-sudo mkdir -p /opt
-cd /opt/
+cd /opt
+sudo curl -O https://downloads.apache.org/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
+sudo tar -xvzf apache-tomcat-${TOMCAT_VERSION}.tar.gz
+sudo ln -s apache-tomcat-${TOMCAT_VERSION} tomcat9
+sudo chmod +x /opt/tomcat9/bin/*.sh
 
-if [ ! -d "/opt/tomcat" ]; then
-  echo "Downloading and installing Tomcat..."
-  sudo curl -O https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
-  sudo tar -xzf apache-tomcat-${TOMCAT_VERSION}.tar.gz
-  sudo mv apache-tomcat-${TOMCAT_VERSION} tomcat
-  sudo chmod +x /opt/tomcat/bin/*.sh
-  sudo chown -R ec2-user:ec2-user /opt/tomcat
-else
-  echo "Tomcat is already installed. Skipping installation."
-fi
-
-echo "======== Creating tomcat-users.xml with admin user ========="
-sudo tee /opt/tomcat/conf/tomcat-users.xml > /dev/null <<EOF
-<tomcat-users>
-  <role rolename="manager-gui"/>
-  <role rolename="manager-script"/>
-  <role rolename="manager-jmx"/>
-  <role rolename="manager-status"/>
-  <user username="admin" password="admin" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
-</tomcat-users>
-EOF
-
-echo "======== Creating Tomcat systemd service ========="
-if [ ! -f "/etc/systemd/system/tomcat.service" ]; then
-  sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
+# === 4. Configure systemd service ===
+echo "=== Creating systemd service for Tomcat ==="
+sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
 [Unit]
 Description=Apache Tomcat Web Application Container
 After=network.target
 
 [Service]
 Type=forking
-User=ec2-user
-Group=ec2-user
 
 Environment=JAVA_HOME=/usr/lib/jvm/java-11-amazon-corretto
-Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid
-Environment=CATALINA_HOME=/opt/tomcat
-Environment=CATALINA_BASE=/opt/tomcat
+Environment=CATALINA_PID=/opt/tomcat9/temp/tomcat.pid
+Environment=CATALINA_HOME=/opt/tomcat9
+Environment=CATALINA_BASE=/opt/tomcat9
+Environment='CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC'
 
-ExecStart=/opt/tomcat/bin/startup.sh
-ExecStop=/opt/tomcat/bin/shutdown.sh
+ExecStart=/opt/tomcat9/bin/startup.sh
+ExecStop=/opt/tomcat9/bin/shutdown.sh
 
-Restart=always
+User=ec2-user
+Group=ec2-user
+UMask=0007
 RestartSec=10
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
 EOF
-else
-  echo "Tomcat systemd service already exists. Skipping creation."
-fi
 
-echo "======== Stopping Tomcat to deploy WAR file ========="
-sudo systemctl stop tomcat || true
-
-echo "======== Deploying WAR file to Tomcat ========="
-WAR_NAME="Ecomm.war"
-SOURCE_WAR="/home/ec2-user/${WAR_NAME}"
-TARGET_WAR="/opt/tomcat/webapps/${WAR_NAME}"
-APP_DIR="/opt/tomcat/webapps/Ecomm"
-
-# Clean up previous deployment
-sudo rm -rf "$APP_DIR"
-sudo rm -f "$TARGET_WAR"
-
-if [ -f "$SOURCE_WAR" ]; then
-  sudo cp "$SOURCE_WAR" "$TARGET_WAR"
-  echo "✅ WAR file copied to Tomcat webapps."
-else
-  echo "❌ WAR file not found at $SOURCE_WAR"
-  exit 1
-fi
-
-echo "======== Starting and Enabling Tomcat service ========="
+sudo systemctl daemon-reexec
 sudo systemctl daemon-reload
 sudo systemctl enable tomcat
+sudo systemctl start tomcat
+
+# === 5. Deploy WAR File ===
+echo "=== Deploying WAR File ==="
+sudo cp /home/ec2-user/Ecomm.war /opt/tomcat9/webapps/
+
+# === 6. Configure tomcat-users.xml for manager access ===
+echo "=== Configuring tomcat-users.xml ==="
+sudo tee /opt/tomcat9/conf/tomcat-users.xml > /dev/null <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<tomcat-users xmlns="http://tomcat.apache.org/xml"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
+               version="1.0">
+  <role rolename="manager-gui"/>
+  <role rolename="admin-gui"/>
+  <user username="admin" password="admin123" roles="manager-gui,admin-gui"/>
+</tomcat-users>
+EOF
+
+# === 7. Prevent ROOT from being overwritten by Ecomm ===
+echo "=== Ensuring Tomcat homepage loads first ==="
+# Do NOT replace ROOT.war with your app. Deploy only Ecomm.war.
+# So / shows Tomcat homepage, and /Ecomm shows your app
+
+# === 8. Restart Tomcat to apply everything ===
 sudo systemctl restart tomcat
 
-echo "======== Deployment Complete ========="
+echo "✅ Tomcat deployed. Visit http://<your-ec2-public-ip>:8080/"
+echo "➡ Click 'Manager App' -> Login with admin/admin123 -> Find and click 'Ecomm' app"
