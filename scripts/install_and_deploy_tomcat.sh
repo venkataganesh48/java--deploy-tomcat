@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e
-
 TOMCAT_VERSION=9.0.86
 TOMCAT_DIR=/opt/tomcat
 WAR_FILE=/opt/tomcat/latest/webapps/Ecomm.war
