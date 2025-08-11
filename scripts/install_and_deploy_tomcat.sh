@@ -3,48 +3,94 @@ set -e
 
 TOMCAT_VERSION=9.0.86
 TOMCAT_DIR=/opt/tomcat
-TOMCAT_HOME=$TOMCAT_DIR/apache-tomcat-$TOMCAT_VERSION
+WAR_FILE=/opt/tomcat/latest/webapps/Ecomm.war
+TOMCAT_USERS_FILE=/opt/tomcat/latest/conf/tomcat-users.xml
 
-echo "===== Step 1: Install Java if not installed ====="
-if ! java -version &>/dev/null; then
-  yum install -y java-11-amazon-corretto
+echo "===== Starting Tomcat Install & Deployment Script ====="
+
+# Detect lifecycle event (optional debug)
+echo "Running for CodeDeploy lifecycle event: $LIFECYCLE_EVENT"
+
+# 1. Stop Tomcat if running
+if systemctl is-active --quiet tomcat; then
+    echo "Stopping Tomcat..."
+    sudo systemctl stop tomcat
 fi
 
-echo "===== Step 2: Install Tomcat if not installed ====="
-if [ ! -d "$TOMCAT_HOME" ]; then
-  mkdir -p $TOMCAT_DIR
-  cd $TOMCAT_DIR
-  wget https://downloads.apache.org/tomcat/tomcat-9/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz
-  tar xvf apache-tomcat-$TOMCAT_VERSION.tar.gz
-  ln -sfn $TOMCAT_HOME $TOMCAT_DIR/latest
-  chmod +x $TOMCAT_DIR/latest/bin/*.sh
+# 2. Install Java if not installed
+if ! command -v java &>/dev/null; then
+    echo "Installing Amazon Corretto 11..."
+    sudo yum install -y java-11-amazon-corretto
 fi
 
-echo "===== Step 3: Copy tomcat-users.xml from repo ====="
-cp tomcat-users.xml $TOMCAT_DIR/latest/conf/tomcat-users.xml
-
-echo "===== Step 4: Stop Tomcat if running ====="
-if pgrep -f "org.apache.catalina.startup.Bootstrap" > /dev/null; then
-  $TOMCAT_DIR/latest/bin/shutdown.sh || true
-  sleep 5
+# 3. Install Tomcat if not installed
+if [ ! -d "$TOMCAT_DIR" ]; then
+    echo "Downloading and installing Tomcat $TOMCAT_VERSION..."
+    sudo mkdir -p $TOMCAT_DIR
+    cd /tmp
+    curl -O https://downloads.apache.org/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
+    sudo tar xzf apache-tomcat-${TOMCAT_VERSION}.tar.gz -C $TOMCAT_DIR
+    sudo ln -s $TOMCAT_DIR/apache-tomcat-${TOMCAT_VERSION} $TOMCAT_DIR/latest
+    sudo chmod +x $TOMCAT_DIR/latest/bin/*.sh
 fi
 
-echo "===== Step 5: Cleanup old Ecomm deployment ====="
-rm -rf $TOMCAT_DIR/latest/webapps/Ecomm*
+# 4. Set up systemd service for Tomcat (only once)
+if [ ! -f /etc/systemd/system/tomcat.service ]; then
+    echo "Creating Tomcat systemd service..."
+    sudo bash -c 'cat > /etc/systemd/system/tomcat.service <<EOF
+[Unit]
+Description=Apache Tomcat Web Application Container
+After=network.target
 
-echo "===== Step 6: Deploy new Ecomm.war ====="
-cp target/Ecomm.war $TOMCAT_DIR/latest/webapps/
+[Service]
+Type=forking
+Environment=JAVA_HOME=/usr/lib/jvm/java-11-amazon-corretto
+Environment=CATALINA_PID='"$TOMCAT_DIR"'/latest/temp/tomcat.pid
+Environment=CATALINA_HOME='"$TOMCAT_DIR"'/latest
+Environment=CATALINA_BASE='"$TOMCAT_DIR"'/latest
+ExecStart='"$TOMCAT_DIR"'/latest/bin/startup.sh
+ExecStop='"$TOMCAT_DIR"'/latest/bin/shutdown.sh
+User=ec2-user
+Group=ec2-user
+UMask=0007
+RestartSec=10
+Restart=always
 
-echo "===== Step 7: Start Tomcat ====="
-$TOMCAT_DIR/latest/bin/startup.sh
+[Install]
+WantedBy=multi-user.target
+EOF'
+    sudo systemctl daemon-reload
+    sudo systemctl enable tomcat
+fi
 
-echo "===== Step 8: Validate Tomcat is running ====="
-sleep 10
-if curl -s http://localhost:8080 | grep -q "Apache Tomcat"; then
-  echo "Tomcat homepage is accessible."
+# 5. Deploy WAR file (already copied by appspec.yml)
+if [ -f "$WAR_FILE" ]; then
+    echo "WAR file deployed to $WAR_FILE"
 else
-  echo "Tomcat validation failed!"
-  exit 1
+    echo "ERROR: WAR file missing!"
+    exit 1
 fi
 
-echo "===== Deployment Successful! ====="
+# 6. Deploy tomcat-users.xml (already copied by appspec.yml)
+if [ -f "$TOMCAT_USERS_FILE" ]; then
+    echo "Tomcat users file deployed to $TOMCAT_USERS_FILE"
+else
+    echo "ERROR: tomcat-users.xml missing!"
+    exit 1
+fi
+
+# 7. Start Tomcat
+echo "Starting Tomcat..."
+sudo systemctl start tomcat
+
+# 8. Validate Tomcat service
+echo "Validating Tomcat..."
+sleep 10
+if systemctl is-active --quiet tomcat; then
+    echo "Tomcat is running successfully."
+else
+    echo "Tomcat failed to start!"
+    exit 1
+fi
+
+echo "===== Tomcat Deployment Completed Successfully ====="
