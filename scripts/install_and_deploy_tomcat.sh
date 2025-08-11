@@ -2,47 +2,49 @@
 set -e
 
 TOMCAT_VERSION=9.0.86
-WAR_NAME=Ecomm.war
 TOMCAT_DIR=/opt/tomcat
+TOMCAT_HOME=$TOMCAT_DIR/apache-tomcat-$TOMCAT_VERSION
 
-echo "=== Installing Java ==="
+echo "===== Step 1: Install Java if not installed ====="
 if ! java -version &>/dev/null; then
   yum install -y java-11-amazon-corretto
 fi
 
-echo "=== Installing Tomcat if not present ==="
-if [ ! -d "$TOMCAT_DIR/apache-tomcat-$TOMCAT_VERSION" ]; then
+echo "===== Step 2: Install Tomcat if not installed ====="
+if [ ! -d "$TOMCAT_HOME" ]; then
   mkdir -p $TOMCAT_DIR
   cd $TOMCAT_DIR
   wget https://downloads.apache.org/tomcat/tomcat-9/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz
   tar xvf apache-tomcat-$TOMCAT_VERSION.tar.gz
-  ln -s apache-tomcat-$TOMCAT_VERSION latest
-  chmod +x latest/bin/*.sh
+  ln -sfn $TOMCAT_HOME $TOMCAT_DIR/latest
+  chmod +x $TOMCAT_DIR/latest/bin/*.sh
 fi
 
-echo "=== Stopping Tomcat if running ==="
-if [ -f "$TOMCAT_DIR/latest/bin/shutdown.sh" ]; then
+echo "===== Step 3: Copy tomcat-users.xml from repo ====="
+cp tomcat-users.xml $TOMCAT_DIR/latest/conf/tomcat-users.xml
+
+echo "===== Step 4: Stop Tomcat if running ====="
+if pgrep -f "org.apache.catalina.startup.Bootstrap" > /dev/null; then
   $TOMCAT_DIR/latest/bin/shutdown.sh || true
   sleep 5
 fi
 
-echo "=== Cleaning old deployment ==="
+echo "===== Step 5: Cleanup old Ecomm deployment ====="
 rm -rf $TOMCAT_DIR/latest/webapps/Ecomm*
 
-echo "=== Copying WAR file ==="
-cp target/$WAR_NAME $TOMCAT_DIR/latest/webapps/
+echo "===== Step 6: Deploy new Ecomm.war ====="
+cp target/Ecomm.war $TOMCAT_DIR/latest/webapps/
 
-echo "=== Copying tomcat-users.xml ==="
-cp tomcat-users.xml $TOMCAT_DIR/latest/conf/
-
-echo "=== Starting Tomcat ==="
+echo "===== Step 7: Start Tomcat ====="
 $TOMCAT_DIR/latest/bin/startup.sh
 
-echo "=== Validating deployment ==="
+echo "===== Step 8: Validate Tomcat is running ====="
 sleep 10
-if curl -f http://localhost:8080; then
-  echo "Deployment successful!"
+if curl -s http://localhost:8080 | grep -q "Apache Tomcat"; then
+  echo "Tomcat homepage is accessible."
 else
-  echo "Deployment failed!"
+  echo "Tomcat validation failed!"
   exit 1
 fi
+
+echo "===== Deployment Successful! ====="
