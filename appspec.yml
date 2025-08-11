@@ -1,41 +1,28 @@
 version: 0.0
 os: linux
-
 files:
   - source: target/Ecomm.war
-    destination: /home/ec2-user/
+    destination: /opt/tomcat/latest/webapps/
   - source: tomcat-users.xml
-    destination: /home/ec2-user/
-  - source: scripts/install_and_deploy_tomcat.sh
-    destination: /home/ec2-user/scripts/
-
+    destination: /opt/tomcat/latest/conf/
 hooks:
   ApplicationStop:
     - location: scripts/install_and_deploy_tomcat.sh
+      timeout: 300
       runas: root
-      args:
-        - ApplicationStop
-
   BeforeInstall:
     - location: scripts/install_and_deploy_tomcat.sh
+      timeout: 300
       runas: root
-      args:
-        - BeforeInstall
-
   AfterInstall:
     - location: scripts/install_and_deploy_tomcat.sh
+      timeout: 300
       runas: root
-      args:
-        - AfterInstall
-
   ApplicationStart:
     - location: scripts/install_and_deploy_tomcat.sh
+      timeout: 300
       runas: root
-      args:
-        - ApplicationStart
-
   ValidateService:
     - location: scripts/install_and_deploy_tomcat.sh
+      timeout: 300
       runas: root
-      args:
-        - ValidateService
