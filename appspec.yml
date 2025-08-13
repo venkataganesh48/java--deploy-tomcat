@@ -2,11 +2,15 @@ version: 0.0
 os: linux
 
 files:
-  - source: /
+  - source: Ecomm.war
     destination: /home/ec2-user/
+  - source: tomcat-users.xml
+    destination: /home/ec2-user/
+  - source: scripts/
+    destination: /home/ec2-user/scripts/
 
 hooks:
   AfterInstall:
-    - location: scripts/install_and_deploy_tomcat.sh
-      timeout: 200
+    - location: /home/ec2-user/scripts/install_and_deploy_tomcat.sh
+      timeout: 100
       runas: root
