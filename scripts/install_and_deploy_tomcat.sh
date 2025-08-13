@@ -1,65 +1,69 @@
 #!/bin/bash
-set -e
 
-# Variables
-TOMCAT_VERSION="10.1.65"
-TOMCAT_DIR="/opt/apache-tomcat-$TOMCAT_VERSION"
-WAR_SOURCE="/home/ec2-user/Ecomm.war"
-TOMCAT_USERS="/home/ec2-user/tomcat-users.xml"
-APP_NAME="Ecomm"
-DEST_DIR="$TOMCAT_DIR/webapps/$APP_NAME"
+set -e   # Exit immediately if a command fails
 
-# 1. Install Java and dependencies
-echo "[INFO] Installing Java and required packages..."
-yum install -y java-17-amazon-corretto wget tar || true
+# Paths
+TOMCAT_DIR="/opt/tomcat"
+WAR_FILE="Ecomm.war"
+SOURCE_WAR="/home/ec2-user/$WAR_FILE"
+SOURCE_TOMCAT_USERS="/home/ec2-user/tomcat-users.xml"
 
-# 2. Install Tomcat if not installed
+echo "======== Updating system ========="
+sudo yum update -y
+
+echo "======== Installing Java 11 ========="
+sudo amazon-linux-extras enable corretto11
+sudo yum install -y java-11-amazon-corretto wget tar
+
+# Install Tomcat if not already installed
 if [ ! -d "$TOMCAT_DIR" ]; then
-    echo "[INFO] Installing Tomcat $TOMCAT_VERSION..."
-    wget https://downloads.apache.org/tomcat/tomcat-10/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz -P /tmp
-    tar -xzf /tmp/apache-tomcat-$TOMCAT_VERSION.tar.gz -C /opt
-    chmod +x $TOMCAT_DIR/bin/*.sh
+  echo "======== Installing Tomcat ========="
+  cd /opt/
+  sudo wget https://downloads.apache.org/tomcat/tomcat-9/v9.0.86/bin/apache-tomcat-9.0.86.tar.gz
+  sudo tar -xzf apache-tomcat-9.0.86.tar.gz
+  sudo mv apache-tomcat-9.0.86 tomcat
+  sudo chmod +x $TOMCAT_DIR/bin/*.sh
 
-    # Create systemd service
-    if [ ! -f /etc/systemd/system/tomcat.service ]; then
-        cat <<EOF >/etc/systemd/system/tomcat.service
+  echo "======== Creating Tomcat systemd service ========="
+  sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
 [Unit]
 Description=Apache Tomcat
 After=network.target
 
 [Service]
 Type=forking
-User=root
+User=ec2-user
 ExecStart=$TOMCAT_DIR/bin/startup.sh
 ExecStop=$TOMCAT_DIR/bin/shutdown.sh
-Restart=on-failure
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
 EOF
-        systemctl daemon-reload
-        systemctl enable tomcat
-    fi
+
+  sudo systemctl daemon-reload
+  sudo systemctl enable tomcat
 fi
 
-# 3. Stop Tomcat
-echo "[INFO] Stopping Tomcat..."
-$TOMCAT_DIR/bin/shutdown.sh || true
-sleep 5
+echo "======== Copying tomcat-users.xml ========="
+if [ -f "$SOURCE_TOMCAT_USERS" ]; then
+  sudo cp "$SOURCE_TOMCAT_USERS" "$TOMCAT_DIR/conf/tomcat-users.xml"
+  echo "tomcat-users.xml copied to Tomcat conf directory."
+else
+  echo "tomcat-users.xml not found at $SOURCE_TOMCAT_USERS"
+  exit 1
+fi
 
-# 4. Deploy WAR
-mkdir -p $DEST_DIR
-rm -rf $DEST_DIR/*
-cp $WAR_SOURCE $DEST_DIR/ROOT.war
-chown -R root:root $DEST_DIR
-echo "[INFO] WAR deployed."
+echo "======== Deploying WAR file to Tomcat ========="
+if [ -f "$SOURCE_WAR" ]; then
+  sudo cp "$SOURCE_WAR" "$TOMCAT_DIR/webapps/$WAR_FILE"
+  echo "WAR file deployed to Tomcat."
+else
+  echo "WAR file not found at $SOURCE_WAR"
+  exit 1
+fi
 
-# 5. Configure tomcat-users.xml
-cp $TOMCAT_USERS $TOMCAT_DIR/conf/tomcat-users.xml
-echo "[INFO] tomcat-users.xml updated."
+echo "======== Restarting Tomcat ========="
+sudo systemctl restart tomcat
 
-# 6. Start Tomcat
-echo "[INFO] Starting Tomcat..."
-$TOMCAT_DIR/bin/startup.sh
-
-echo "[SUCCESS] Deployment completed! Access your app at /$APP_NAME"
+echo "======== Deployment completed successfully! ========"
