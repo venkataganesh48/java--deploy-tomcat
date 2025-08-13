@@ -2,10 +2,10 @@ version: 0.0
 os: linux
 
 files:
-  - source: target/*.war
-    destination: /home/ec2-user/Ecomm.war
+  - source: target/Ecomm.war
+    destination: /home/ec2-user/
   - source: tomcat-users.xml
-    destination: /home/ec2-user/tomcat-users.xml
+    destination: /home/ec2-user/
   - source: scripts/install_and_deploy_tomcat.sh
     destination: /home/ec2-user/scripts/
 
