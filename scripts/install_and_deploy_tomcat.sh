@@ -1,24 +1,33 @@
 #!/bin/bash
 set -e   # Exit immediately if a command fails
 
+# --------------------------
 # Paths
+# --------------------------
 TOMCAT_DIR="/opt/tomcat"
 WAR_FILE="Ecomm.war"
 SOURCE_WAR="/home/ec2-user/$WAR_FILE"
 SOURCE_TOMCAT_USERS="/home/ec2-user/tomcat-users.xml"
 
-# Set the Tomcat version to a valid current version
-TOMCAT_VERSION="9.0.109"
+# --------------------------
+# Tomcat version
+# --------------------------
+TOMCAT_VERSION="9.0.109"  # latest stable 9.x version
 TOMCAT_ARCHIVE="apache-tomcat-$TOMCAT_VERSION.tar.gz"
 TOMCAT_URL="https://downloads.apache.org/tomcat/tomcat-9/v$TOMCAT_VERSION/bin/$TOMCAT_ARCHIVE"
 
+# --------------------------
+# Update system and install Java
+# --------------------------
 echo "======== Updating system ========="
 sudo yum update -y
 
 echo "======== Installing Java 11 and tools ========="
 sudo yum install -y java-11-amazon-corretto wget tar
 
-# Install Tomcat if not already installed
+# --------------------------
+# Install Tomcat if not installed
+# --------------------------
 if [ ! -d "$TOMCAT_DIR" ]; then
     echo "======== Installing Tomcat $TOMCAT_VERSION ========="
     cd /opt/
@@ -27,7 +36,9 @@ if [ ! -d "$TOMCAT_DIR" ]; then
     sudo mv "apache-tomcat-$TOMCAT_VERSION" tomcat
     sudo chmod +x $TOMCAT_DIR/bin/*.sh
 
-    # Check if systemd exists
+    # --------------------------
+    # Create systemd service
+    # --------------------------
     if command -v systemctl >/dev/null 2>&1; then
         echo "======== Creating Tomcat systemd service ========="
         sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
@@ -55,6 +66,9 @@ EOF
     fi
 fi
 
+# --------------------------
+# Copy tomcat-users.xml
+# --------------------------
 echo "======== Copying tomcat-users.xml ========="
 if [ -f "$SOURCE_TOMCAT_USERS" ]; then
     sudo cp "$SOURCE_TOMCAT_USERS" "$TOMCAT_DIR/conf/tomcat-users.xml"
@@ -64,6 +78,9 @@ else
     exit 1
 fi
 
+# --------------------------
+# Deploy WAR file
+# --------------------------
 echo "======== Deploying WAR file ========="
 if [ -f "$SOURCE_WAR" ]; then
     sudo cp "$SOURCE_WAR" "$TOMCAT_DIR/webapps/$WAR_FILE"
@@ -73,6 +90,9 @@ else
     exit 1
 fi
 
+# --------------------------
+# Restart Tomcat
+# --------------------------
 echo "======== Restarting Tomcat ========="
 if command -v systemctl >/dev/null 2>&1; then
     sudo systemctl restart tomcat
