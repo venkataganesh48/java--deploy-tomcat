@@ -1,83 +1,53 @@
 #!/bin/bash
 set -e
 
-TOMCAT_VERSION=9.0.86
-TOMCAT_DIR="/opt/tomcat"
-WAR_SRC="/home/ec2-user/Ecomm.war"
-USERS_XML_SRC="/home/ec2-user/tomcat-users.xml"
+TOMCAT_DIR="/opt/apache-tomcat-10.1.42"
+WAR_SOURCE="/home/ec2-user/Ecomm.war"
+TOMCAT_USERS="/home/ec2-user/tomcat-users.xml"
 
-echo "[INFO] Starting deployment script..."
-
-# 1. Install Java if not present
-if ! java -version &>/dev/null; then
-    echo "[INFO] Installing Java 11..."
-    yum install -y java-11-amazon-corretto
-else
-    echo "[INFO] Java already installed."
-fi
-
-# 2. Install Tomcat only if not installed
+# 1. Install Java and Tomcat if not installed
 if [ ! -d "$TOMCAT_DIR" ]; then
-    echo "[INFO] Installing Tomcat $TOMCAT_VERSION..."
-    cd /tmp
-    curl -O https://dlcdn.apache.org/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
-    mkdir -p $TOMCAT_DIR
-    tar xzf apache-tomcat-${TOMCAT_VERSION}.tar.gz -C $TOMCAT_DIR --strip-components=1
-
-    # Make scripts executable
+    echo "[INFO] Installing Java and Tomcat..."
+    yum install -y java-17-amazon-corretto
+    wget https://downloads.apache.org/tomcat/tomcat-10/v10.1.42/bin/apache-tomcat-10.1.42.tar.gz -P /tmp
+    tar -xzf /tmp/apache-tomcat-10.1.42.tar.gz -C /opt
     chmod +x $TOMCAT_DIR/bin/*.sh
-
-    # Create systemd service
+    # Optional: create systemd service
     cat <<EOF >/etc/systemd/system/tomcat.service
 [Unit]
-Description=Apache Tomcat Web Application Container
+Description=Apache Tomcat
 After=network.target
 
 [Service]
 Type=forking
-
-Environment=CATALINA_PID=${TOMCAT_DIR}/temp/tomcat.pid
-Environment=CATALINA_HOME=${TOMCAT_DIR}
-Environment=CATALINA_BASE=${TOMCAT_DIR}
-ExecStart=${TOMCAT_DIR}/bin/startup.sh
-ExecStop=${TOMCAT_DIR}/bin/shutdown.sh
 User=root
-Group=root
-UMask=0007
-RestartSec=10
-Restart=always
+ExecStart=$TOMCAT_DIR/bin/startup.sh
+ExecStop=$TOMCAT_DIR/bin/shutdown.sh
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
 EOF
-
     systemctl daemon-reload
     systemctl enable tomcat
-    echo "[INFO] Tomcat installed successfully."
-else
-    echo "[INFO] Tomcat already installed. Skipping installation."
 fi
 
-# 3. Stop Tomcat before deployment
+# 2. Stop Tomcat
 echo "[INFO] Stopping Tomcat..."
-systemctl stop tomcat || true
+$TOMCAT_DIR/bin/shutdown.sh || true
+sleep 5
 
-# 4. Deploy WAR
+# 3. Deploy WAR
 echo "[INFO] Deploying Ecomm.war..."
-rm -rf $TOMCAT_DIR/webapps/Ecomm
-rm -f $TOMCAT_DIR/webapps/Ecomm.war
-cp $WAR_SRC $TOMCAT_DIR/webapps/
+cp $WAR_SOURCE $TOMCAT_DIR/webapps/
+chown -R root:root $TOMCAT_DIR/webapps/Ecomm.war
 
-# 5. Update tomcat-users.xml
-if [ -f "$USERS_XML_SRC" ]; then
-    echo "[INFO] Updating tomcat-users.xml..."
-    cp $USERS_XML_SRC $TOMCAT_DIR/conf/tomcat-users.xml
-else
-    echo "[WARN] tomcat-users.xml not found in repo!"
-fi
+# 4. Configure tomcat-users.xml
+echo "[INFO] Configuring Tomcat manager authentication..."
+cp $TOMCAT_USERS $TOMCAT_DIR/conf/tomcat-users.xml
 
-# 6. Start Tomcat
+# 5. Start Tomcat
 echo "[INFO] Starting Tomcat..."
-systemctl start tomcat
+$TOMCAT_DIR/bin/startup.sh
 
-echo "[INFO] Deployment completed successfully!"
+echo "[SUCCESS] Deployment completed!"
