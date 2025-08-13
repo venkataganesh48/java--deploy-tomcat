@@ -3,9 +3,9 @@ os: linux
 
 files:
   - source: target/Ecomm.war
-    destination: /opt/tomcat/latest/webapps/
+    destination: /home/ec2-user/
   - source: tomcat-users.xml
-    destination: /opt/tomcat/latest/conf/
+    destination: /home/ec2-user/
 
 hooks:
   ApplicationStop:
