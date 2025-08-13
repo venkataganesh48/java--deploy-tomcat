@@ -18,7 +18,7 @@ phases:
       - echo Building the WAR file...
       - mvn clean package -DskipTests
       - echo Copying WAR to artifact root...
-      - cp target/Ecomm.war .   # Copy WAR to root so appspec.yml is simple
+      - cp target/Ecomm.war    # Copy WAR to root so appspec.yml is simple
 
   post_build:
     commands:
