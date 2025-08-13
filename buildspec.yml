@@ -19,8 +19,12 @@ phases:
       - cp tomcat-users.xml artifact/
       - cp appspec.yml artifact/
       - cp -r scripts artifact/
+      - echo "[INFO] Creating deployment zip..."
+      - cd artifact
+      - zip -r ../deployment-package.zip ./*
+      - cd ..
+      - echo "[INFO] deployment-package.zip ready for CodeDeploy."
 
 artifacts:
   files:
-    - '**/*'
-  base-directory: artifact
+    - deployment-package.zip
