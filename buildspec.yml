@@ -1,12 +1,23 @@
-version: 0.0
-os: linux
+version: 0.2
 
-files:
-  - source: target/Ecomm.war
-    destination: /home/ec2-user/
+phases:
+  install:
+    runtime-versions:
+      java: corretto11
+    commands:
+      - echo "[INFO] Installing Maven..."
+      - yum install -y maven
+  build:
+    commands:
+      - echo "[INFO] Building WAR file..."
+      - mvn clean package
+  post_build:
+    commands:
+      - echo "[INFO] Build completed. Preparing artifacts..."
 
-hooks:
-  AfterInstall:
-    - location: scripts/install_and_deploy_tomcat.sh
-      timeout: 300
-      runas: ec2-user
+artifacts:
+  files:
+    - target/Ecomm.war
+    - tomcat-users.xml
+    - appspec.yml
+    - scripts/install_and_deploy_tomcat.sh
