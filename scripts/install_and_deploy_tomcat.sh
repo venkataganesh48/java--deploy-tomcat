@@ -1,11 +1,13 @@
 #!/bin/bash
 set -e
 
+# Paths
 TOMCAT_DIR="/opt/tomcat"
 WAR_FILE="Ecomm.war"
 SOURCE_WAR="/home/ec2-user/$WAR_FILE"
 SOURCE_TOMCAT_USERS="/home/ec2-user/tomcat-users.xml"
 
+# Tomcat version
 TOMCAT_VERSION="9.0.86"
 TOMCAT_ARCHIVE="apache-tomcat-$TOMCAT_VERSION.tar.gz"
 TOMCAT_URL="https://downloads.apache.org/tomcat/tomcat-9/v$TOMCAT_VERSION/bin/$TOMCAT_ARCHIVE"
@@ -16,17 +18,18 @@ sudo yum update -y
 echo "======== Installing Java 11 and tools ========="
 sudo yum install -y java-11-amazon-corretto wget tar
 
-# Install Tomcat if missing
+# Install Tomcat if not already installed
 if [ ! -d "$TOMCAT_DIR" ]; then
     echo "======== Installing Tomcat $TOMCAT_VERSION ========="
-    cd /opt
+    cd /opt/
     sudo wget $TOMCAT_URL
     sudo tar -xzf $TOMCAT_ARCHIVE
     sudo mv "apache-tomcat-$TOMCAT_VERSION" tomcat
     sudo chmod +x $TOMCAT_DIR/bin/*.sh
 
-    echo "======== Creating systemd service ========="
-    sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
+    if command -v systemctl >/dev/null 2>&1; then
+        echo "======== Creating Tomcat systemd service ========="
+        sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
 [Unit]
 Description=Apache Tomcat
 After=network.target
@@ -41,8 +44,9 @@ Restart=always
 [Install]
 WantedBy=multi-user.target
 EOF
-    sudo systemctl daemon-reload
-    sudo systemctl enable tomcat
+        sudo systemctl daemon-reload
+        sudo systemctl enable tomcat
+    fi
 fi
 
 echo "======== Copying tomcat-users.xml ========="
@@ -52,6 +56,12 @@ echo "======== Deploying WAR file ========="
 sudo cp "$SOURCE_WAR" "$TOMCAT_DIR/webapps/$WAR_FILE"
 
 echo "======== Restarting Tomcat ========="
-sudo systemctl restart tomcat
+if command -v systemctl >/dev/null 2>&1; then
+    sudo systemctl restart tomcat
+else
+    sudo service tomcat stop || true
+    sudo service tomcat start
+fi
 
 echo "======== Deployment completed successfully! ========"
+
