@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-TOMCAT_VERSION="10.1.65"  # stable, downloadable version
+# Variables
+TOMCAT_VERSION="10.1.65"
 TOMCAT_DIR="/opt/apache-tomcat-$TOMCAT_VERSION"
 WAR_SOURCE="/home/ec2-user/Ecomm.war"
 TOMCAT_USERS="/home/ec2-user/tomcat-users.xml"
@@ -19,7 +20,7 @@ if [ ! -d "$TOMCAT_DIR" ]; then
     tar -xzf /tmp/apache-tomcat-$TOMCAT_VERSION.tar.gz -C /opt
     chmod +x $TOMCAT_DIR/bin/*.sh
 
-    # Create systemd service if missing
+    # Create systemd service
     if [ ! -f /etc/systemd/system/tomcat.service ]; then
         cat <<EOF >/etc/systemd/system/tomcat.service
 [Unit]
