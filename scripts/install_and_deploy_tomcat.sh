@@ -1,35 +1,21 @@
 #!/bin/bash
-set -e
-
-# Paths
-TOMCAT_DIR="/opt/tomcat"
-WAR_FILE="Ecomm.war"
-SOURCE_WAR="/home/ec2-user/$WAR_FILE"
-SOURCE_TOMCAT_USERS="/home/ec2-user/tomcat-users.xml"
-
-# Tomcat version
-TOMCAT_VERSION="9.0.86"
-TOMCAT_ARCHIVE="apache-tomcat-$TOMCAT_VERSION.tar.gz"
-TOMCAT_URL="https://downloads.apache.org/tomcat/tomcat-9/v$TOMCAT_VERSION/bin/$TOMCAT_ARCHIVE"
 
 echo "======== Updating system ========="
 sudo yum update -y
 
-echo "======== Installing Java 11 and tools ========="
-sudo yum install -y java-11-amazon-corretto wget tar
+echo "======== Installing Java 11 ========="
+sudo amazon-linux-extras enable corretto11
+sudo yum install -y java-11-amazon-corretto
 
-# Install Tomcat if not already installed
-if [ ! -d "$TOMCAT_DIR" ]; then
-    echo "======== Installing Tomcat $TOMCAT_VERSION ========="
-    cd /opt/
-    sudo wget $TOMCAT_URL
-    sudo tar -xzf $TOMCAT_ARCHIVE
-    sudo mv "apache-tomcat-$TOMCAT_VERSION" tomcat
-    sudo chmod +x $TOMCAT_DIR/bin/*.sh
+echo "======== Installing Tomcat ========="
+cd /opt/
+sudo wget https://downloads.apache.org/tomcat/tomcat-9/v9.0.85/bin/apache-tomcat-9.0.85.tar.gz
+sudo tar -xzf apache-tomcat-9.0.85.tar.gz
+sudo mv apache-tomcat-9.0.85 tomcat
+sudo chmod +x /opt/tomcat/bin/*.sh
 
-    if command -v systemctl >/dev/null 2>&1; then
-        echo "======== Creating Tomcat systemd service ========="
-        sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
+echo "======== Creating Tomcat systemd service ========="
+sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
 [Unit]
 Description=Apache Tomcat
 After=network.target
@@ -37,31 +23,31 @@ After=network.target
 [Service]
 Type=forking
 User=ec2-user
-ExecStart=$TOMCAT_DIR/bin/startup.sh
-ExecStop=$TOMCAT_DIR/bin/shutdown.sh
+ExecStart=/opt/tomcat/bin/startup.sh
+ExecStop=/opt/tomcat/bin/shutdown.sh
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 EOF
-        sudo systemctl daemon-reload
-        sudo systemctl enable tomcat
-    fi
-fi
 
-echo "======== Copying tomcat-users.xml ========="
-sudo cp "$SOURCE_TOMCAT_USERS" "$TOMCAT_DIR/conf/tomcat-users.xml"
+echo "======== Starting and enabling Tomcat service ========="
+sudo systemctl daemon-reload
+sudo systemctl start tomcat
+sudo systemctl enable tomcat
 
-echo "======== Deploying WAR file ========="
-sudo cp "$SOURCE_WAR" "$TOMCAT_DIR/webapps/$WAR_FILE"
+echo "======== Deploying WAR file to Tomcat ========="
+WAR_FILE="Ecomm.war"
+SOURCE_WAR="/home/ec2-user/$WAR_FILE"
+TARGET_WAR="/opt/tomcat/webapps/$WAR_FILE"
 
-echo "======== Restarting Tomcat ========="
-if command -v systemctl >/dev/null 2>&1; then
-    sudo systemctl restart tomcat
+if [ -f "$SOURCE_WAR" ]; then
+  sudo cp "$SOURCE_WAR" "$TARGET_WAR"
+  echo "WAR file deployed to Tomcat."
 else
-    sudo service tomcat stop || true
-    sudo service tomcat start
+  echo "WAR file not found at $SOURCE_WAR"
+  exit 1
 fi
 
-echo "======== Deployment completed successfully! ========"
-
+echo "======== Restarting Tomcat to reload application ========="
+sudo systemctl restart tomcat
