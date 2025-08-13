@@ -15,6 +15,7 @@ echo "======== Installing Java 11 ========="
 sudo amazon-linux-extras enable corretto11
 sudo yum install -y java-11-amazon-corretto wget tar
 
+
 # Install Tomcat if not already installed
 if [ ! -d "$TOMCAT_DIR" ]; then
   echo "======== Installing Tomcat ========="
