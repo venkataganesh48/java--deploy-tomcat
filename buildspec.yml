@@ -7,23 +7,25 @@ phases:
     commands:
       - echo "Installing Maven..."
       - yum install -y maven
+
   pre_build:
     commands:
       - echo "Checking Maven version..."
       - mvn --version
+
   build:
     commands:
-      - echo "Building the WAR file..."
+      - echo "Building the Java WAR package..."
       - mvn clean package -DskipTests
+
   post_build:
     commands:
       - echo "Build completed. Preparing artifacts..."
-      - ls -l target
+      - ls -l target/
 
 artifacts:
   files:
-    - appspec.yml
-    - scripts/**
-    - tomcat-users.xml
     - target/*.war
-  discard-paths: yes
+    - appspec.yml
+    - scripts/install_and_deploy_tomcat.sh
+    - tomcat-users.xml
