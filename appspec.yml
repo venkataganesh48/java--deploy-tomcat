@@ -8,5 +8,5 @@ files:
 hooks:
   AfterInstall:
     - location: scripts/install_and_deploy_tomcat.sh
-      timeout: 300
+      timeout: 200
       runas: root
