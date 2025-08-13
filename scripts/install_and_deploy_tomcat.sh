@@ -14,20 +14,15 @@ sudo tar -xzf apache-tomcat-9.0.85.tar.gz
 sudo mv apache-tomcat-9.0.85 tomcat
 sudo chmod +x /opt/tomcat/bin/*.sh
 
-echo "======== Configuring Tomcat Manager User ========="
-# Overwrite tomcat-users.xml with admin user and all manager roles
+echo "======== Configuring Tomcat user (for automation) ========="
 sudo tee /opt/tomcat/conf/tomcat-users.xml > /dev/null <<EOF
 <tomcat-users>
-  <role rolename="manager-gui"/>
   <role rolename="manager-script"/>
-  <role rolename="manager-jmx"/>
-  <role rolename="manager-status"/>
-  <user username="admin" password="Admin123!" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
+  <user username="admin" password="Admin123!" roles="manager-script"/>
 </tomcat-users>
 EOF
 
-echo "======== Allowing Remote Access to Manager ========="
-# Comment out RemoteAddrValve in context.xml
+echo "======== Removing remote access restrictions ========="
 sudo sed -i 's/<Valve className="org.apache.catalina.valves.RemoteAddrValve".*/<!-- & -->/' /opt/tomcat/webapps/manager/META-INF/context.xml
 
 echo "======== Creating Tomcat systemd service ========="
@@ -65,7 +60,7 @@ else
   exit 1
 fi
 
-echo "======== Restarting Tomcat to reload application ========="
+echo "======== Restarting Tomcat to load new application ========="
 sudo systemctl restart tomcat
 
-echo "======== Tomcat setup complete. Manager available remotely at /manager/html ========="
+echo "======== Deployment complete. Access your app at http://<EC2-Public-IP>:8080/Ecomm ========="
