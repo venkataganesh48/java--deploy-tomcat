@@ -1,51 +1,72 @@
 #!/bin/bash
-set -e
+set -e   # Exit immediately if a command fails
 
+# Paths
 TOMCAT_DIR="/opt/tomcat"
 WAR_FILE="Ecomm.war"
 SOURCE_WAR="/home/ec2-user/$WAR_FILE"
 SOURCE_TOMCAT_USERS="/home/ec2-user/tomcat-users.xml"
-TOMCAT_VERSION="9.0.109"
+
+# Latest stable Tomcat 9 version
+TOMCAT_VERSION="9.0.96"
 TOMCAT_ARCHIVE="apache-tomcat-$TOMCAT_VERSION.tar.gz"
 TOMCAT_URL="https://downloads.apache.org/tomcat/tomcat-9/v$TOMCAT_VERSION/bin/$TOMCAT_ARCHIVE"
 
+echo "======== Updating system ========="
 sudo yum update -y
+
+echo "======== Installing Java 11 and tools ========="
 sudo yum install -y java-11-amazon-corretto wget tar
 
+# Install Tomcat if not already installed
 if [ ! -d "$TOMCAT_DIR" ]; then
+    echo "======== Installing Tomcat $TOMCAT_VERSION ========="
     cd /opt/
     sudo wget $TOMCAT_URL
     sudo tar -xzf $TOMCAT_ARCHIVE
     sudo mv "apache-tomcat-$TOMCAT_VERSION" tomcat
     sudo chmod +x $TOMCAT_DIR/bin/*.sh
-    sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
+
+    # Create systemd service
+    if command -v systemctl >/dev/null 2>&1; then
+        echo "======== Creating Tomcat systemd service ========="
+        sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
 [Unit]
 Description=Apache Tomcat
 After=network.target
+
 [Service]
 Type=forking
 User=ec2-user
 ExecStart=$TOMCAT_DIR/bin/startup.sh
 ExecStop=$TOMCAT_DIR/bin/shutdown.sh
 Restart=always
+
 [Install]
 WantedBy=multi-user.target
 EOF
-    sudo systemctl daemon-reload
-    sudo systemctl enable tomcat
+        sudo systemctl daemon-reload
+        sudo systemctl enable tomcat
+    else
+        echo "Systemd not found, using init.d for Tomcat"
+        sudo cp $TOMCAT_DIR/bin/catalina.sh /etc/init.d/tomcat
+        sudo chmod +x /etc/init.d/tomcat
+        sudo chkconfig --add tomcat
+    fi
 fi
 
-if [ ! -f "$SOURCE_TOMCAT_USERS" ]; then
-    echo "ERROR: tomcat-users.xml missing"
-    exit 1
-fi
+echo "======== Copying tomcat-users.xml ========="
 sudo cp "$SOURCE_TOMCAT_USERS" "$TOMCAT_DIR/conf/tomcat-users.xml"
 
-if [ ! -f "$SOURCE_WAR" ]; then
-    echo "ERROR: WAR file missing"
-    exit 1
-fi
-sudo cp "$SOURCE_WAR" "$TOMCAT_DIR/webapps/"
+echo "======== Deploying WAR file ========="
+sudo cp "$SOURCE_WAR" "$TOMCAT_DIR/webapps/$WAR_FILE"
 
-sudo systemctl restart tomcat
-echo "Deployment completed successfully!"
+echo "======== Restarting Tomcat ========="
+if command -v systemctl >/dev/null 2>&1; then
+    sudo systemctl restart tomcat
+else
+    sudo service tomcat stop || true
+    sudo service tomcat start
+fi
+
+echo "======== Deployment completed successfully! ========"
