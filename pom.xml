@@ -8,17 +8,17 @@
 	<name>Simple Ecomerce Maven Webapp</name>
 	<url>http://maven.apache.org</url>
 	<distributionManagement>
-    <repository>
-        <id>central</id>
-        <name>ip-172-31-10-127.ap-northeast-3.compute.internal-releases</name>
-        <url>http://3.110.223.194:8081/artifactory/etoe</url>
-    </repository>
-    <snapshotRepository>
-        <id>snapshots</id>
-        <name>ip-172-31-10-127.ap-northeast-3.compute.internal-snapshots</name>
-        <url>http://13.201.184.143:8081/artifactory/etoe</url>
-    </snapshotRepository>
-</distributionManagement>
+        <repository>
+            <id>central</id>
+            <name>ip-172-31-10-127.ap-northeast-3.compute.internal-releases</name>
+            <url>http://3.110.223.194:8081/artifactory/etoe</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>ip-172-31-10-127.ap-northeast-3.compute.internal-snapshots</name>
+            <url>http://13.201.184.143:8081/artifactory/etoe</url>
+        </snapshotRepository>
+    </distributionManagement>
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
@@ -35,7 +35,7 @@
 				<artifactId>tomcat7-maven-plugin</artifactId> 
 				<version>2.2</version> 
 				<configuration> 
-					 <url>http://13.208.175.113:8080/manager/text</url>
+					<url>http://13.208.175.113:8080/manager/text</url>
 					<server>apache-tomcat</server> 
 					<username>admin</username>
 					<password>admin</password>
