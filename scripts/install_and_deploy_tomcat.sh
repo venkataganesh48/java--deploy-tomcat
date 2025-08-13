@@ -2,47 +2,46 @@
 set -e
 set -x
 
+# Variables
 TOMCAT_VERSION=9.0.88
 TOMCAT_DIR=/opt/tomcat
+WAR_NAME=Ecomm.war
+SOURCE_WAR=/home/ec2-user/$WAR_NAME
+TOMCAT_USERS_SRC=/home/ec2-user/tomcat-users.xml
 
-# 1️⃣ Install Java 11 if missing
+echo "======== Installing Java 11 (Amazon Corretto) ========="
 if ! java -version &>/dev/null; then
-  echo "Installing Java 11..."
   sudo yum install -y java-11-amazon-corretto
 else
   echo "Java is already installed."
 fi
 
-# 2️⃣ Install Tomcat if missing
-sudo mkdir -p /opt
-cd /opt/
+echo "======== Installing Tomcat ========="
 if [ ! -d "$TOMCAT_DIR" ]; then
+  sudo mkdir -p /opt
+  cd /opt
   echo "Downloading Tomcat ${TOMCAT_VERSION}..."
   sudo curl -O https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
   sudo tar -xzf apache-tomcat-${TOMCAT_VERSION}.tar.gz
   sudo mv apache-tomcat-${TOMCAT_VERSION} tomcat
-  sudo chmod +x /opt/tomcat/bin/*.sh
-  sudo chown -R ec2-user:ec2-user /opt/tomcat
+  sudo chmod +x $TOMCAT_DIR/bin/*.sh
+  sudo chown -R ec2-user:ec2-user $TOMCAT_DIR
 else
-  echo "Tomcat already installed. Skipping."
+  echo "Tomcat is already installed. Skipping installation."
 fi
 
-sudo mkdir -p /opt/tomcat/temp
-sudo chown -R ec2-user:ec2-user /opt/tomcat/temp
-
-# 3️⃣ Copy your tomcat-users.xml from repo
-if [ -f /home/ec2-user/tomcat-users.xml ]; then
-  echo "Copying tomcat-users.xml..."
-  sudo cp /home/ec2-user/tomcat-users.xml /opt/tomcat/conf/tomcat-users.xml
-  sudo chown ec2-user:ec2-user /opt/tomcat/conf/tomcat-users.xml
+echo "======== Configuring tomcat-users.xml ========="
+if [ -f "$TOMCAT_USERS_SRC" ]; then
+  sudo cp "$TOMCAT_USERS_SRC" $TOMCAT_DIR/conf/tomcat-users.xml
+  sudo chown ec2-user:ec2-user $TOMCAT_DIR/conf/tomcat-users.xml
+  echo "tomcat-users.xml copied from repo."
 else
-  echo "tomcat-users.xml not found! Deployment will fail."
+  echo "tomcat-users.xml not found in repo, exiting."
   exit 1
 fi
 
-# 4️⃣ Create systemd service if not exists
+echo "======== Creating Tomcat systemd service ========="
 if [ ! -f "/etc/systemd/system/tomcat.service" ]; then
-  echo "Creating Tomcat systemd service..."
   sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
 [Unit]
 Description=Apache Tomcat Web Application Container
@@ -52,14 +51,18 @@ After=network.target
 Type=forking
 User=ec2-user
 Group=ec2-user
+
 Environment=JAVA_HOME=/usr/lib/jvm/java-11-amazon-corretto
-Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid
-Environment=CATALINA_HOME=/opt/tomcat
-Environment=CATALINA_BASE=/opt/tomcat
-ExecStart=/opt/tomcat/bin/startup.sh
-ExecStop=/opt/tomcat/bin/shutdown.sh
+Environment=CATALINA_PID=${TOMCAT_DIR}/temp/tomcat.pid
+Environment=CATALINA_HOME=${TOMCAT_DIR}
+Environment=CATALINA_BASE=${TOMCAT_DIR}
+
+ExecStart=${TOMCAT_DIR}/bin/startup.sh
+ExecStop=${TOMCAT_DIR}/bin/shutdown.sh
+
 Restart=always
 RestartSec=10
+
 [Install]
 WantedBy=multi-user.target
 EOF
@@ -67,30 +70,29 @@ else
   echo "Tomcat systemd service already exists. Skipping creation."
 fi
 
-# 5️⃣ Stop Tomcat before deployment
+echo "======== Stopping Tomcat to deploy WAR file ========="
 sudo systemctl stop tomcat || true
 
-# 6️⃣ Deploy WAR
-WAR_NAME="Ecomm.war"
-SOURCE_WAR="/home/ec2-user/${WAR_NAME}"
-TARGET_WAR="/opt/tomcat/webapps/${WAR_NAME}"
-APP_DIR="/opt/tomcat/webapps/Ecomm"
+echo "======== Deploying WAR file ========="
+TARGET_WAR=${TOMCAT_DIR}/webapps/$WAR_NAME
+APP_DIR=${TOMCAT_DIR}/webapps/Ecomm
 
 # Clean previous deployment
 sudo rm -rf "$APP_DIR"
 sudo rm -f "$TARGET_WAR"
 
 if [ -f "$SOURCE_WAR" ]; then
-  echo "Deploying WAR file..."
   sudo cp "$SOURCE_WAR" "$TARGET_WAR"
+  echo "WAR file deployed to Tomcat."
 else
-  echo "❌ WAR file not found at $SOURCE_WAR"
+  echo "WAR file not found at $SOURCE_WAR, exiting."
   exit 1
 fi
 
-# 7️⃣ Start Tomcat
+echo "======== Starting and enabling Tomcat service ========="
 sudo systemctl daemon-reload
 sudo systemctl enable tomcat
 sudo systemctl restart tomcat
 
-echo "✅ Deployment Complete. Tomcat running with Ecomm deployed."
+echo "======== Deployment Complete ========="
+
