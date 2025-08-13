@@ -1,11 +1,13 @@
 #!/bin/bash
 set -e   # Exit immediately if a command fails
 
+# Paths and filenames
 TOMCAT_DIR="/opt/tomcat"
 WAR_FILE="Ecomm.war"
 SOURCE_WAR="/home/ec2-user/$WAR_FILE"
 SOURCE_TOMCAT_USERS="/home/ec2-user/tomcat-users.xml"
 
+# Tomcat version
 TOMCAT_VERSION="9.0.109"
 TOMCAT_ARCHIVE="apache-tomcat-$TOMCAT_VERSION.tar.gz"
 TOMCAT_URL="https://downloads.apache.org/tomcat/tomcat-9/v$TOMCAT_VERSION/bin/$TOMCAT_ARCHIVE"
@@ -16,7 +18,7 @@ sudo yum update -y
 echo "======== Installing Java 11 and tools ========="
 sudo yum install -y java-11-amazon-corretto wget tar
 
-# Install Tomcat if not installed
+# Install Tomcat if not already installed
 if [ ! -d "$TOMCAT_DIR" ]; then
     echo "======== Installing Tomcat $TOMCAT_VERSION ========="
     cd /opt/
@@ -25,6 +27,7 @@ if [ ! -d "$TOMCAT_DIR" ]; then
     sudo mv "apache-tomcat-$TOMCAT_VERSION" tomcat
     sudo chmod +x $TOMCAT_DIR/bin/*.sh
 
+    # Create systemd service if systemctl exists
     if command -v systemctl >/dev/null 2>&1; then
         echo "======== Creating Tomcat systemd service ========="
         sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
