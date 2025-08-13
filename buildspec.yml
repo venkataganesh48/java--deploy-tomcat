@@ -9,15 +9,19 @@ phases:
       - yum install -y maven
   build:
     commands:
-      - echo "[INFO] Building WAR file..."
+      - echo "[INFO] Cleaning and packaging application..."
       - mvn clean package
+      - echo "[INFO] Creating artifact directory..."
+      - mkdir -p artifact
+      - cp target/Ecomm.war artifact/
+      - cp tomcat-users.xml artifact/
+      - cp appspec.yml artifact/
+      - mkdir -p artifact/scripts
+      - cp scripts/install_and_deploy_tomcat.sh artifact/scripts/
   post_build:
     commands:
-      - echo "[INFO] Build completed. Preparing artifacts..."
+      - echo "[INFO] Build complete. Artifact ready."
 
 artifacts:
   files:
-    - target/Ecomm.war
-    - tomcat-users.xml
-    - appspec.yml
-    - scripts/install_and_deploy_tomcat.sh
+    - artifact/**/*
