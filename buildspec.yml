@@ -3,21 +3,21 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      java: corretto11
+      java: corretto17
     commands:
-      - echo "[INFO] Installing Maven..."
       - yum install -y maven
   build:
     commands:
-      - echo "[INFO] Building WAR file..."
       - mvn clean package
   post_build:
     commands:
-      - echo "[INFO] Build completed. Preparing artifacts..."
+      - mkdir -p artifact
+      - cp target/Ecomm.war artifact/
+      - cp tomcat-users.xml artifact/
+      - cp appspec.yml artifact/
+      - cp -r scripts artifact/
 
 artifacts:
   files:
-    - target/Ecomm.war
-    - tomcat-users.xml
-    - appspec.yml
-    - scripts/install_and_deploy_tomcat.sh
+    - '**/*'
+  base-directory: artifact
