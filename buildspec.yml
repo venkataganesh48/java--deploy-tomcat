@@ -17,15 +17,17 @@ phases:
     commands:
       - echo Building the WAR file...
       - mvn clean package -DskipTests
+      - echo Copying WAR to artifact root...
+      - cp target/Ecomm.war .   # Copy WAR to root so appspec.yml is simple
 
   post_build:
     commands:
-      - echo Build completed. Artifacts in target/
-      - ls -l target/
+      - echo Build complete. Artifacts prepared:
+      - ls -l
 
 artifacts:
   files:
-    - target/*.war
+    - Ecomm.war               # WAR in artifact root
     - appspec.yml
     - scripts/*
     - tomcat-users.xml
