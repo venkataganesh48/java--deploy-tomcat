@@ -3,28 +3,26 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      java: corretto17
+      java: corretto11
     commands:
-      - echo "[INFO] Installing Maven..."
+      - echo "Installing Maven..."
       - yum install -y maven
+  pre_build:
+    commands:
+      - echo "Checking Maven version..."
+      - mvn --version
   build:
     commands:
-      - echo "[INFO] Cleaning and building WAR file..."
-      - mvn clean package
+      - echo "Building the WAR file..."
+      - mvn clean package -DskipTests
   post_build:
     commands:
-      - echo "[INFO] Preparing artifacts for CodeDeploy..."
-      - mkdir -p artifact
-      - cp target/Ecomm.war artifact/
-      - cp tomcat-users.xml artifact/
-      - cp appspec.yml artifact/
-      - cp -r scripts artifact/
-      - echo "[INFO] Creating deployment zip..."
-      - cd artifact
-      - zip -r ../deployment-package.zip ./*
-      - cd ..
-      - echo "[INFO] deployment-package.zip ready for CodeDeploy."
+      - echo "Build completed. Listing target folder..."
+      - ls -l target
 
 artifacts:
   files:
-    - deployment-package.zip
+    - target/*.war              # The WAR built by Maven
+    - tomcat-users.xml          # Include your tomcat-users.xml
+    - appspec.yml               # Include your appspec
+    - scripts/install_and_deploy_tomcat.sh
