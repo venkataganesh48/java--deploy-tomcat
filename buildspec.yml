@@ -17,12 +17,13 @@ phases:
       - mvn clean package -DskipTests
   post_build:
     commands:
-      - echo "Build completed. Listing target folder..."
+      - echo "Build completed. Preparing artifacts..."
       - ls -l target
 
 artifacts:
   files:
-    - target/*.war              # The WAR built by Maven
-    - tomcat-users.xml          # Include your tomcat-users.xml
-    - appspec.yml               # Include your appspec
-    - scripts/install_and_deploy_tomcat.sh
+    - appspec.yml
+    - scripts/**
+    - tomcat-users.xml
+    - target/*.war
+  discard-paths: yes
