@@ -2,9 +2,8 @@ version: 0.0
 os: linux
 
 files:
-  - source: target/Ecomm.war
+  - source: Ecomm.war
     destination: /home/ec2-user/
-
   - source: tomcat-users.xml
     destination: /home/ec2-user/
 
