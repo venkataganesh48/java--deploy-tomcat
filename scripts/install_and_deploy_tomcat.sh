@@ -7,29 +7,42 @@ TOMCAT_DIR=/opt/tomcat
 
 # 1️⃣ Install Java 11 if missing
 if ! java -version &>/dev/null; then
+  echo "Installing Java 11..."
   sudo yum install -y java-11-amazon-corretto
+else
+  echo "Java is already installed."
 fi
 
 # 2️⃣ Install Tomcat if missing
 sudo mkdir -p /opt
 cd /opt/
 if [ ! -d "$TOMCAT_DIR" ]; then
-  sudo curl -O https://downloads.apache.org/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
+  echo "Downloading Tomcat ${TOMCAT_VERSION}..."
+  sudo curl -O https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz
   sudo tar -xzf apache-tomcat-${TOMCAT_VERSION}.tar.gz
   sudo mv apache-tomcat-${TOMCAT_VERSION} tomcat
   sudo chmod +x /opt/tomcat/bin/*.sh
   sudo chown -R ec2-user:ec2-user /opt/tomcat
+else
+  echo "Tomcat already installed. Skipping."
 fi
 
 sudo mkdir -p /opt/tomcat/temp
 sudo chown -R ec2-user:ec2-user /opt/tomcat/temp
 
-# 3️⃣ Copy tomcat-users.xml from repo
-sudo cp /home/ec2-user/tomcat-users.xml /opt/tomcat/conf/tomcat-users.xml
-sudo chown ec2-user:ec2-user /opt/tomcat/conf/tomcat-users.xml
+# 3️⃣ Copy your tomcat-users.xml from repo
+if [ -f /home/ec2-user/tomcat-users.xml ]; then
+  echo "Copying tomcat-users.xml..."
+  sudo cp /home/ec2-user/tomcat-users.xml /opt/tomcat/conf/tomcat-users.xml
+  sudo chown ec2-user:ec2-user /opt/tomcat/conf/tomcat-users.xml
+else
+  echo "tomcat-users.xml not found! Deployment will fail."
+  exit 1
+fi
 
-# 4️⃣ Create systemd service
+# 4️⃣ Create systemd service if not exists
 if [ ! -f "/etc/systemd/system/tomcat.service" ]; then
+  echo "Creating Tomcat systemd service..."
   sudo tee /etc/systemd/system/tomcat.service > /dev/null <<EOF
 [Unit]
 Description=Apache Tomcat Web Application Container
@@ -50,9 +63,11 @@ RestartSec=10
 [Install]
 WantedBy=multi-user.target
 EOF
+else
+  echo "Tomcat systemd service already exists. Skipping creation."
 fi
 
-# 5️⃣ Stop Tomcat
+# 5️⃣ Stop Tomcat before deployment
 sudo systemctl stop tomcat || true
 
 # 6️⃣ Deploy WAR
@@ -61,13 +76,15 @@ SOURCE_WAR="/home/ec2-user/${WAR_NAME}"
 TARGET_WAR="/opt/tomcat/webapps/${WAR_NAME}"
 APP_DIR="/opt/tomcat/webapps/Ecomm"
 
+# Clean previous deployment
 sudo rm -rf "$APP_DIR"
 sudo rm -f "$TARGET_WAR"
 
 if [ -f "$SOURCE_WAR" ]; then
+  echo "Deploying WAR file..."
   sudo cp "$SOURCE_WAR" "$TARGET_WAR"
 else
-  echo "WAR file not found!"
+  echo "❌ WAR file not found at $SOURCE_WAR"
   exit 1
 fi
 
@@ -75,3 +92,5 @@ fi
 sudo systemctl daemon-reload
 sudo systemctl enable tomcat
 sudo systemctl restart tomcat
+
+echo "✅ Deployment Complete. Tomcat running with Ecomm deployed."
