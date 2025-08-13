@@ -5,17 +5,14 @@ phases:
     runtime-versions:
       java: corretto11
     commands:
-      - echo Installing Maven...
+      - echo "Installing Maven..."
       - yum install -y maven
-
   build:
     commands:
-      - echo Building WAR package...
-      - mvn clean package -DskipTests
-
+      - echo "Building WAR file..."
+      - mvn clean package
 artifacts:
   files:
     - target/Ecomm.war
-    - appspec.yml
     - tomcat-users.xml
     - scripts/install_and_deploy_tomcat.sh
