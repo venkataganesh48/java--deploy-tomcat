@@ -7,19 +7,24 @@ WAR_FILE="Ecomm.war"
 SOURCE_WAR="/home/ec2-user/$WAR_FILE"
 SOURCE_TOMCAT_USERS="/home/ec2-user/tomcat-users.xml"
 
+# Set the Tomcat version to a valid current version
+TOMCAT_VERSION="9.0.96"
+TOMCAT_ARCHIVE="apache-tomcat-$TOMCAT_VERSION.tar.gz"
+TOMCAT_URL="https://downloads.apache.org/tomcat/tomcat-9/v$TOMCAT_VERSION/bin/$TOMCAT_ARCHIVE"
+
 echo "======== Updating system ========="
 sudo yum update -y
 
-echo "======== Installing Java 11 ========="
+echo "======== Installing Java 11 and tools ========="
 sudo yum install -y java-11-amazon-corretto wget tar
 
 # Install Tomcat if not already installed
 if [ ! -d "$TOMCAT_DIR" ]; then
-    echo "======== Installing Tomcat ========="
+    echo "======== Installing Tomcat $TOMCAT_VERSION ========="
     cd /opt/
-    sudo wget https://downloads.apache.org/tomcat/tomcat-9/v9.0.86/bin/apache-tomcat-9.0.86.tar.gz
-    sudo tar -xzf apache-tomcat-9.0.86.tar.gz
-    sudo mv apache-tomcat-9.0.86 tomcat
+    sudo wget $TOMCAT_URL
+    sudo tar -xzf $TOMCAT_ARCHIVE
+    sudo mv "apache-tomcat-$TOMCAT_VERSION" tomcat
     sudo chmod +x $TOMCAT_DIR/bin/*.sh
 
     # Check if systemd exists
@@ -77,4 +82,3 @@ else
 fi
 
 echo "======== Deployment completed successfully! ========"
-
