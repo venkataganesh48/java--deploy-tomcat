@@ -5,12 +5,15 @@ phases:
     runtime-versions:
       java: corretto17
     commands:
+      - echo "[INFO] Installing Maven..."
       - yum install -y maven
   build:
     commands:
+      - echo "[INFO] Cleaning and building WAR file..."
       - mvn clean package
   post_build:
     commands:
+      - echo "[INFO] Preparing artifacts for CodeDeploy..."
       - mkdir -p artifact
       - cp target/Ecomm.war artifact/
       - cp tomcat-users.xml artifact/
