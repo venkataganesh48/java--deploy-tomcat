@@ -1,27 +1,12 @@
-version: 0.2
+version: 0.0
+os: linux
 
-phases:
-  install:
-    runtime-versions:
-      java: corretto11
-    commands:
-      - echo "[INFO] Installing Maven..."
-      - yum install -y maven
-  build:
-    commands:
-      - echo "[INFO] Cleaning and packaging application..."
-      - mvn clean package
-      - echo "[INFO] Creating artifact directory..."
-      - mkdir -p artifact
-      - cp target/Ecomm.war artifact/
-      - cp tomcat-users.xml artifact/
-      - cp appspec.yml artifact/
-      - mkdir -p artifact/scripts
-      - cp scripts/install_and_deploy_tomcat.sh artifact/scripts/
-  post_build:
-    commands:
-      - echo "[INFO] Build complete. Artifact ready."
+files:
+  - source: target/Ecomm.war
+    destination: /home/ec2-user/
 
-artifacts:
-  files:
-    - artifact/**/*
+hooks:
+  AfterInstall:
+    - location: scripts/install_and_deploy_tomcat.sh
+      timeout: 300
+      runas: ec2-user
