@@ -3,12 +3,24 @@ os: linux
 
 files:
   - source: target/Ecomm.war
-    destination: /home/ec2-user/
+    destination: /opt/tomcat/latest/webapps/
   - source: tomcat-users.xml
-    destination: /home/ec2-user/
+    destination: /opt/tomcat/latest/conf/
 
 hooks:
+  ApplicationStop:
+    - location: scripts/install_and_deploy_tomcat.sh
+      timeout: 300
+      runas: root
+  BeforeInstall:
+    - location: scripts/install_and_deploy_tomcat.sh
+      timeout: 300
+      runas: root
   AfterInstall:
+    - location: scripts/install_and_deploy_tomcat.sh
+      timeout: 300
+      runas: root
+  ApplicationStart:
     - location: scripts/install_and_deploy_tomcat.sh
       timeout: 300
       runas: root
