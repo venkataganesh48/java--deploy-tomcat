@@ -8,7 +8,7 @@ SOURCE_WAR="/home/ec2-user/$WAR_FILE"
 SOURCE_TOMCAT_USERS="/home/ec2-user/tomcat-users.xml"
 
 # Set the Tomcat version to a valid current version
-TOMCAT_VERSION="9.0.96"
+TOMCAT_VERSION="9.0.109"
 TOMCAT_ARCHIVE="apache-tomcat-$TOMCAT_VERSION.tar.gz"
 TOMCAT_URL="https://downloads.apache.org/tomcat/tomcat-9/v$TOMCAT_VERSION/bin/$TOMCAT_ARCHIVE"
 
