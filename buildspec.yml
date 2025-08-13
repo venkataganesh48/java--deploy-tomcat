@@ -27,5 +27,5 @@ artifacts:
   files:
     - target/Ecomm.war
     - tomcat-users.xml
-    - scripts/** 
+    - scripts/**
     - appspec.yml
