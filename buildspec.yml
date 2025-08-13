@@ -5,21 +5,17 @@ phases:
     runtime-versions:
       java: corretto11
     commands:
-      - echo "Installing Maven..."
-      - yum install -y maven
+      - echo "Installing tools..."
+      - yum install -y wget tar
+
   pre_build:
     commands:
-      - echo "Checking Maven version..."
-      - mvn --version
+      - echo "Downloading Ecomm.war from S3..."
+      - aws s3 cp s3://war-tomcat/Ecomm.war ./Ecomm.war
+
   build:
     commands:
-      - echo "Building WAR package..."
-      - mvn clean package -DskipTests
-  post_build:
-    commands:
-      - echo "Copying WAR to root for CodeDeploy..."
-      - cp target/Ecomm.war .
-      - ls -l
+      - echo "Preparing artifact bundle..."
 
 artifacts:
   files:
