@@ -1,15 +1,21 @@
 version: 0.2
+
 phases:
   install:
     runtime-versions:
       java: corretto11
+    commands:
+      - echo Installing Maven...
+      - yum install -y maven
+
   build:
     commands:
-      - echo "Running Maven build..."
-      - mvn clean package
+      - echo Building WAR package...
+      - mvn clean package -DskipTests
+
 artifacts:
   files:
     - target/Ecomm.war
     - appspec.yml
-    - scripts/install_and_deploy_tomcat.sh
     - tomcat-users.xml
+    - scripts/install_and_deploy_tomcat.sh
