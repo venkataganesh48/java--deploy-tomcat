@@ -33,17 +33,27 @@ else
     echo "Tomcat already installed. Skipping installation."
 fi
 
-echo "======== Configuring tomcat-users.xml ========="
-if [ -f "/home/ec2-user/tomcat-users.xml" ]; then
-    sudo cp /home/ec2-user/tomcat-users.xml $TOMCAT_DIR/conf/tomcat-users.xml
-    sudo chown $TOMCAT_USER:$TOMCAT_USER $TOMCAT_DIR/conf/tomcat-users.xml
-    echo "tomcat-users.xml copied from repo."
-fi
+echo "======== Configuring Tomcat Manager and Users ========="
+# Correct tomcat-users.xml content
+cat <<EOL > /tmp/tomcat-users.xml
+<tomcat-users>
+  <role rolename="manager-gui"/>
+  <role rolename="manager-script"/>
+  <role rolename="manager-jmx"/>
+  <role rolename="manager-status"/>
+  <user username="admin" password="admin" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
+</tomcat-users>
+EOL
 
-echo "======== Allowing Manager Remote Access ========="
-# Remove RemoteAddrValve restriction in manager context.xml
+# Copy to Tomcat conf
+sudo cp /tmp/tomcat-users.xml $TOMCAT_DIR/conf/tomcat-users.xml
+sudo chown $TOMCAT_USER:$TOMCAT_USER $TOMCAT_DIR/conf/tomcat-users.xml
+echo "✅ tomcat-users.xml deployed correctly."
+
+# Remove RemoteAddrValve for remote manager access
 MANAGER_CONTEXT="$TOMCAT_DIR/webapps/manager/META-INF/context.xml"
-sudo sed -i '/RemoteAddrValve/d' $MANAGER_CONTEXT
+sudo sed -i '/RemoteAddrValve/d' "$MANAGER_CONTEXT"
+echo "✅ RemoteAddrValve removed for remote manager access."
 
 echo "======== Creating Tomcat systemd service ========="
 if [ ! -f /etc/systemd/system/tomcat.service ]; then
@@ -100,4 +110,5 @@ sudo systemctl restart tomcat
 
 echo "======== Deployment Complete ========="
 echo "Tomcat homepage: http://<EC2_PUBLIC_IP>:8080/"
-echo "Manager app: http://<EC2_PUBLIC_IP>:8080/manager/html (use your credentials in tomcat-users.xml)"
+echo "Manager app: http://<EC2_PUBLIC_IP>:8080/manager/html"
+echo "Use credentials: username='admin', password='admin'"
