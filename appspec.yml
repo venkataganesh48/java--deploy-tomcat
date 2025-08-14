@@ -10,5 +10,5 @@ files:
 hooks:
   AfterInstall:
     - location: scripts/install_and_deploy_tomcat.sh
-      timeout: 300
+      timeout: 600
       runas: ec2-user
