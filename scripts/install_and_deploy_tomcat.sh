@@ -19,6 +19,10 @@ else
   echo "Java already installed."
 fi
 
+# Automatically detect JAVA_HOME
+JAVA_HOME_PATH=$(dirname $(dirname $(readlink -f $(which java))))
+echo "Detected JAVA_HOME=$JAVA_HOME_PATH"
+
 echo "======== Installing Tomcat ========="
 if [ ! -d "$TOMCAT_DIR" ]; then
     sudo mkdir -p /opt
@@ -34,7 +38,7 @@ else
 fi
 
 echo "======== Configuring Tomcat Manager and Users ========="
-# Correct tomcat-users.xml content
+# Deploy tomcat-users.xml
 cat <<EOL > /tmp/tomcat-users.xml
 <tomcat-users>
   <role rolename="manager-gui"/>
@@ -45,15 +49,19 @@ cat <<EOL > /tmp/tomcat-users.xml
 </tomcat-users>
 EOL
 
-# Copy to Tomcat conf
 sudo cp /tmp/tomcat-users.xml $TOMCAT_DIR/conf/tomcat-users.xml
 sudo chown $TOMCAT_USER:$TOMCAT_USER $TOMCAT_DIR/conf/tomcat-users.xml
 echo "✅ tomcat-users.xml deployed correctly."
 
-# Remove RemoteAddrValve for remote manager access
+# Remove RemoteAddrValve for remote access
 MANAGER_CONTEXT="$TOMCAT_DIR/webapps/manager/META-INF/context.xml"
 sudo sed -i '/RemoteAddrValve/d' "$MANAGER_CONTEXT"
 echo "✅ RemoteAddrValve removed for remote manager access."
+
+# Ensure temp and logs directories exist with correct permissions
+sudo mkdir -p $TOMCAT_DIR/temp
+sudo mkdir -p $TOMCAT_DIR/logs
+sudo chown -R $TOMCAT_USER:$TOMCAT_USER $TOMCAT_DIR
 
 echo "======== Creating Tomcat systemd service ========="
 if [ ! -f /etc/systemd/system/tomcat.service ]; then
@@ -67,7 +75,7 @@ Type=forking
 User=$TOMCAT_USER
 Group=$TOMCAT_USER
 
-Environment=JAVA_HOME=/usr/lib/jvm/java-11-amazon-corretto
+Environment=JAVA_HOME=$JAVA_HOME_PATH
 Environment=CATALINA_PID=$TOMCAT_DIR/temp/tomcat.pid
 Environment=CATALINA_HOME=$TOMCAT_DIR
 Environment=CATALINA_BASE=$TOMCAT_DIR
