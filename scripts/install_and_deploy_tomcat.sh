@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 set -x
-
 # Variables
 TOMCAT_VERSION=9.0.88
 TOMCAT_DIR=/opt/tomcat
