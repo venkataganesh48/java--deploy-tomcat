@@ -7,7 +7,6 @@ TOMCAT_DIR=/opt/tomcat
 WAR_NAME="Ecomm.war"
 SOURCE_WAR="/home/ec2-user/$WAR_NAME"
 TOMCAT_USER="ec2-user"
-
 echo "======== Updating system ========="
 sudo yum update -y
 
